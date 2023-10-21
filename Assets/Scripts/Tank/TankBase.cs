@@ -3,7 +3,7 @@
 public class TankBase : MonoBehaviour
 {
     public float Speed = 7.0f;
-    public float RotSpeed = 10.0f;
+    public float RotSpeed = 15.0f;
 
     protected Genome genome;
 	protected NeuralNetwork brain;

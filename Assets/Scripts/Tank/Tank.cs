@@ -21,11 +21,11 @@ public class Tank : TankBase
         inputs[0] = dirToGoodMine.x;
         inputs[1] = dirToGoodMine.z;
         //inputs[2] = distanceToGoodMine;
-        //inputs[3] = dirToBadMine.x;
-        //inputs[4] = dirToBadMine.z;
-        //inputs[5] = distanceToBadMine;
-        inputs[2] = transform.forward.x;
-        inputs[3] = transform.forward.z;
+        inputs[2] = dirToBadMine.x;
+        inputs[3] = dirToBadMine.z;
+        inputs[4] = distanceToBadMine;
+        inputs[5] = transform.forward.x;
+        inputs[6] = transform.forward.z;
         //inputs[8] = dirCloserTank.x;
         //inputs[9] = dirCloserTank.z;
         //inputs[10] = distanceToCloserTank;
@@ -56,8 +56,6 @@ public class Tank : TankBase
                 break;
         }
 
-        genome.fitness = fitness;
-
         SetForces(output[0], output[1], dt);
     }
 
@@ -68,16 +66,18 @@ public class Tank : TankBase
             case 0:
                 if (IsGoodMine(mine))
                 {
-                    fitness *= 2;
+                    SetFitness((fitness + 100) * 2);
+                }
+                break;
+            case 1:
+                if (IsGoodMine(mine))
+                {
+                    SetFitness((fitness + 100) * 2);
                 }
                 else
                 {
-                    //fitness -= fitness / 3;
+                   // SetFitness(fitness - fitness / 3);
                 }
-                genome.fitness = fitness;
-                break;
-            case 1:
-               
                 break;
             default:
                 break;
@@ -87,15 +87,18 @@ public class Tank : TankBase
     #region PRIVATE_METHODS
     private void RewardIfCloseToGoodMine(float distanceToGoodMine)
     {
-        if (distanceToGoodMine < 4)
+        if (distanceToGoodMine < 3)
         {
-            //fitness += 1f;
-
-            if (distanceToGoodMine < 3)
-            {
-                fitness += 5f;
-            }
+            SetFitness(fitness + 5f);
         }
+    }
+    #endregion
+
+    #region AUX
+    private void SetFitness(float fitness)
+    {
+        this.fitness = fitness;
+        genome.fitness = fitness;
     }
     #endregion
 }

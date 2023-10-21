@@ -5935,22 +5935,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   TankPrefab: {fileID: 1915012411374756, guid: c7621d24efff4b04ca19cf2ef19a1af9, type: 3}
   MinePrefab: {fileID: 1712181699425504, guid: 74d6116ddc0b6ab4686323b873e69fb8, type: 3}
-  PopulationCount: 30
+  PopulationCount: 20
   MinesCount: 20
   SceneHalfExtents: {x: 30, y: 0, z: 40}
-  GenerationDuration: 20
+  GenerationDuration: 30
   IterationCount: 1
-  EliteCount: 4
+  EliteCount: 2
   MutationChance: 0.11
   MutationRate: 0.02
-  InputsCount: 11
+  InputsCount: 7
   HiddenLayers: 1
   OutputsCount: 2
   NeuronsCountPerHL: 7
   Bias: -1
   P: 0.5
   fitnessTillNewTest:
-  - 600000
+  - 10000
   - 1200000
   testIndex: 0
 --- !u!4 &1690210759
