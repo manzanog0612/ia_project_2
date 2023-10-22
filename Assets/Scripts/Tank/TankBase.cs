@@ -2,8 +2,9 @@
 
 public class TankBase : MonoBehaviour
 {
-    public float Speed = 7.0f;
+    public float Speed = 10.0f;
     public float RotSpeed = 15.0f;
+    public bool dead = false;
 
     protected Genome genome;
 	protected NeuralNetwork brain;
@@ -39,6 +40,16 @@ public class TankBase : MonoBehaviour
     public void SetNearestTank(GameObject tank)
     {
         nearTank = tank;
+    }
+
+    public bool IsDead()
+    {
+        return dead;
+    }
+
+    public void SetDead(bool dead)
+    {
+        this.dead = dead;
     }
 
     public bool IsCollidingWithTank()
@@ -77,6 +88,11 @@ public class TankBase : MonoBehaviour
 
 	public void Think(float dt) 
 	{
+        if (dead)
+        {
+            return;
+        }
+
         OnThink(dt);
 
         if(IsCloseToMine(nearMine))
@@ -97,6 +113,6 @@ public class TankBase : MonoBehaviour
 
     protected virtual void OnReset()
     {
-
+        SetDead(false);
     }
 }

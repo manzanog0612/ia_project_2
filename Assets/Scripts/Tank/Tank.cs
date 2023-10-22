@@ -5,6 +5,7 @@ public class Tank : TankBase
     float fitness = 0;
     protected override void OnReset()
     {
+        base.OnReset();
         fitness = 1;
     }
 
@@ -17,15 +18,17 @@ public class Tank : TankBase
         float distanceToGoodMine = GetDistToObject(goodMine);
         float distanceToBadMine = GetDistToObject(badMine);
         //float distanceToCloserTank = GetDistToObject(nearTank);
-
+        //(obstacle.transform.position - birdBehaviour.transform.position).x / 10.0f;
         inputs[0] = dirToGoodMine.x;
         inputs[1] = dirToGoodMine.z;
-        //inputs[2] = distanceToGoodMine;
-        inputs[2] = dirToBadMine.x;
-        inputs[3] = dirToBadMine.z;
-        inputs[4] = distanceToBadMine;
-        inputs[5] = transform.forward.x;
-        inputs[6] = transform.forward.z;
+        inputs[2] = (goodMine.transform.position - transform.position).x / 10.0f;
+        inputs[3] = (goodMine.transform.position - transform.position).z / 10.0f;
+        inputs[4] = dirToBadMine.x;
+        inputs[5] = dirToBadMine.z;
+        inputs[6] = (badMine.transform.position - transform.position).x / 10.0f;
+        inputs[7] = (badMine.transform.position - transform.position).z / 10.0f;
+        inputs[8] = transform.forward.x;
+        inputs[9] = transform.forward.z;
         //inputs[8] = dirCloserTank.x;
         //inputs[9] = dirCloserTank.z;
         //inputs[10] = distanceToCloserTank;
@@ -36,8 +39,11 @@ public class Tank : TankBase
         {
             case 0:
                 RewardIfCloseToGoodMine(distanceToGoodMine);
+                PunishIfCloseToBadMine(distanceToBadMine);
                 break;
             case 1:
+                break;
+            //case 1:
                 //if (distanceToBadMine < 3)
                 //{
                 //    fitness -= 1f;
@@ -47,7 +53,7 @@ public class Tank : TankBase
                 //    RewardIfCloseToGoodMine(distanceToGoodMine);
                 //}
 
-                break;
+                //break;
             default:
             //    if (IsCollidingWithTank())
             //    {
@@ -64,11 +70,6 @@ public class Tank : TankBase
         switch (PopulationManager.Instance.testIndex)
         {
             case 0:
-                if (IsGoodMine(mine))
-                {
-                    SetFitness((fitness + 100) * 2);
-                }
-                break;
             case 1:
                 if (IsGoodMine(mine))
                 {
@@ -76,9 +77,20 @@ public class Tank : TankBase
                 }
                 else
                 {
-                   // SetFitness(fitness - fitness / 3);
+                    //SetDead(true);
+                    SetFitness(fitness - 300);
                 }
                 break;
+            //case 1:
+            //    if (IsGoodMine(mine))
+            //    {
+            //        SetFitness((fitness + 100) * 2);
+            //    }
+            //    else
+            //    {
+            //       // SetFitness(fitness - fitness / 3);
+            //    }
+            //    break;
             default:
                 break;
         } 
@@ -92,11 +104,25 @@ public class Tank : TankBase
             SetFitness(fitness + 5f);
         }
     }
+
+    private void PunishIfCloseToBadMine(float distanceToBadMine)
+    {
+        if (distanceToBadMine < 3)
+        {
+            SetFitness(fitness - 5f);
+        }
+    }
     #endregion
 
     #region AUX
     private void SetFitness(float fitness)
     {
+        if (fitness < 0)
+        {
+            fitness = 0;
+            //SetDead(true);
+        }
+
         this.fitness = fitness;
         genome.fitness = fitness;
     }
