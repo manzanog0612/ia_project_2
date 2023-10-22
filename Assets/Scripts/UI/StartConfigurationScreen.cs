@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -26,6 +25,9 @@ public class StartConfigurationScreen : MonoBehaviour
     public Text sigmoidSlopeTxt;
     public Slider sigmoidSlopeSlider;
     public Button startButton;
+    public Button loadButton;
+    public Button saveButton;
+    public Button loadSimButton;
     public GameObject simulationScreen;
     
     string populationText;
@@ -38,6 +40,7 @@ public class StartConfigurationScreen : MonoBehaviour
     string biasText;
     string sigmoidSlopeText;
     string neuronsPerHLCountText;
+
 
     void Start()
     {   
@@ -74,9 +77,69 @@ public class StartConfigurationScreen : MonoBehaviour
         biasSlider.value = -PopulationManager.Instance.Bias;
         sigmoidSlopeSlider.value = PopulationManager.Instance.P;
 
-        startButton.onClick.AddListener(OnStartButtonClick);        
+        startButton.onClick.AddListener(OnStartButtonClick);
+        loadButton.onClick.AddListener(OnLoadData);
+        saveButton.onClick.AddListener(OnSaveConfig);
+        loadSimButton.onClick.AddListener(OnLoadSim);
     }
 
+    void OnLoadData()
+    {
+
+        data.ConfigurationData config = Utilities.SaveLoadSystem.LoadConfigFile();
+        if (config == null) return;
+        populationCountSlider.onValueChanged.Invoke(config.population_count);
+        minesCountSlider.onValueChanged.Invoke(config.mines_count);
+        generationDurationSlider.onValueChanged.Invoke(config.generation_duration);
+        eliteCountSlider.onValueChanged.Invoke(config.elites_count);
+        mutationChanceSlider.onValueChanged.Invoke(config.mutation_chance * 100.0f);
+        mutationRateSlider.onValueChanged.Invoke(config.mutation_rate * 100.0f);
+        hiddenLayersCountSlider.onValueChanged.Invoke(config.hidden_layers_count);
+        neuronsPerHLSlider.onValueChanged.Invoke(config.neurons_per_hidden_layers);
+        biasSlider.onValueChanged.Invoke(-config.bias);
+        sigmoidSlopeSlider.onValueChanged.Invoke(config.sigmoid);
+    }
+
+    void OnLoadSim()
+    {
+        data.SimData sim = Utilities.SaveLoadSystem.LoadSimFile();
+
+        data.ConfigurationData config = sim.config; if (config == null) return;
+
+        populationCountSlider.onValueChanged.Invoke(config.population_count);
+        minesCountSlider.onValueChanged.Invoke(config.mines_count);
+        generationDurationSlider.onValueChanged.Invoke(config.generation_duration);
+        eliteCountSlider.onValueChanged.Invoke(config.elites_count);
+        mutationChanceSlider.onValueChanged.Invoke(config.mutation_chance * 100.0f);
+        mutationRateSlider.onValueChanged.Invoke(config.mutation_rate * 100.0f);
+        hiddenLayersCountSlider.onValueChanged.Invoke(config.hidden_layers_count);
+        neuronsPerHLSlider.onValueChanged.Invoke(config.neurons_per_hidden_layers);
+        biasSlider.onValueChanged.Invoke(-config.bias);
+        sigmoidSlopeSlider.onValueChanged.Invoke(config.sigmoid);
+
+        PopulationManager.Instance.StartLoadsimulation(sim);
+
+        this.gameObject.SetActive(false);
+        simulationScreen.SetActive(true);
+
+    }
+
+    void OnSaveConfig()
+    {
+        //change to use population manager.
+        data.ConfigurationData config = new();
+        config.population_count = (int)populationCountSlider.value;
+        config.mines_count = (int)minesCountSlider.value;
+        config.generation_duration = generationDurationSlider.value;
+        config.mutation_chance = mutationChanceSlider.value;
+        config.mutation_rate = mutationRateSlider.value;
+        config.hidden_layers_count = hiddenLayersCountSlider.value;
+        config.neurons_per_hidden_layers = neuronsPerHLSlider.value;
+        config.elites_count = (int)eliteCountSlider.value;
+        config.bias = -biasSlider.value;
+        config.sigmoid = sigmoidSlopeSlider.value;
+        Utilities.SaveLoadSystem.SaveConfig(config);
+    }
     void OnPopulationCountChange(float value)
     {
         PopulationManager.Instance.PopulationCount = (int)value;

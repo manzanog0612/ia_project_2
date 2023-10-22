@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 public class SimulationScreen : MonoBehaviour
@@ -13,6 +11,7 @@ public class SimulationScreen : MonoBehaviour
     public Slider timerSlider;
     public Button pauseBtn;
     public Button stopBtn;
+    public Button saveSimBtn;
     public GameObject startConfigurationScreen;
 
     string generationsCountText;
@@ -41,6 +40,7 @@ public class SimulationScreen : MonoBehaviour
 
         pauseBtn.onClick.AddListener(OnPauseButtonClick);
         stopBtn.onClick.AddListener(OnStopButtonClick);
+        saveSimBtn.onClick.AddListener(OnSaveSim);
     }
 
     void OnEnable()
@@ -77,6 +77,11 @@ public class SimulationScreen : MonoBehaviour
         this.gameObject.SetActive(false);
         startConfigurationScreen.SetActive(true);
         lastGeneration = 0;
+    }
+
+    void OnSaveSim()
+    {
+        PopulationManager.Instance.SaveCurrentSim();
     }
 
     void LateUpdate()

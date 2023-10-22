@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting.FullSerializer;
+using Unity.VisualScripting;
 
 public class PopulationManager : MonoBehaviour
 {
@@ -117,6 +119,15 @@ public class PopulationManager : MonoBehaviour
     {
     }
 
+    public void StartLoadsimulation(data.SimData sim)
+    {
+        genAlg = new GeneticAlgorithm(EliteCount, MutationChance, MutationRate);
+
+        LoadInitialPopulation(sim);
+        CreateMines();
+
+        isRunning = true;
+    }
     public void StartSimulation()
     {
         // Create and confiugre the Genetic Algorithm
@@ -168,6 +179,41 @@ public class PopulationManager : MonoBehaviour
         }
 
         accumTime = 0.0f;
+    }
+
+    bool LoadInitialPopulation(data.SimData sim)
+    {
+        data.ConfigurationData config = sim.config;
+        generation = sim.generation_count;
+
+        bestFitness = sim.bestFitness;
+        avgFitness = sim.avgFitness;
+        worstFitness = sim.worstFitness;
+
+        // Destroy previous tanks (if there are any)
+        DestroyTanks();
+
+        if (sim.genomes_count != config.population_count)
+        {
+            Debug.Log("load genomes count has not same amount of population count");
+            return false;
+        }
+
+        for (int i = 0; i < config.population_count; i++)
+        {
+            NeuralNetwork brain = CreateBrain();
+
+            Genome genome = data.Helper.Cast_gemomeData_genome(sim.genomes[i]);
+
+            brain.SetWeights(genome.genome);
+            brains.Add(brain);
+
+            population.Add(genome);
+            populationGOs.Add(CreateTank(genome, brain));
+        }
+
+        accumTime = 0.0f;
+        return true;
     }
 
     // Creates a new NeuralNetwork
@@ -306,6 +352,38 @@ public class PopulationManager : MonoBehaviour
         }
 	}
 
+    public void SaveCurrentSim()
+    {
+        data.ConfigurationData config = new();
+        config.population_count = PopulationCount;
+        config.mines_count = MinesCount;
+        config.generation_duration = GenerationDuration;
+        config.mutation_chance = MutationChance;
+        config.mutation_rate = MutationRate;
+        config.hidden_layers_count = HiddenLayers;
+        config.neurons_per_hidden_layers = NeuronsCountPerHL;
+        config.elites_count = EliteCount;
+        config.bias = -Bias;
+        config.sigmoid = P;
+        data.SimData simData = new data.SimData();
+        simData.config = config;
+        simData.avgFitness = avgFitness;
+        simData.bestFitness = bestFitness;
+        simData.worstFitness = worstFitness;
+        simData.generation_count = generation;
+        simData.genomes_count = PopulationCount;
+        simData.genomes = new data.GenomeData[PopulationCount];
+        
+        for (int i = 0; i < PopulationCount; i++)
+        {
+            simData.genomes[i] = new data.GenomeData();
+            simData.genomes[i].genome_count = population[i].genome.Length;
+            simData.genomes[i].genomes = population[i].genome;
+            simData.genomes[i].fitness = population[i].fitness;
+        }
+        Utilities.SaveLoadSystem.SaveConfig(simData);
+    }
+
 #region Helpers
     Tank CreateTank(Genome genome, NeuralNetwork brain)
     {
@@ -346,7 +424,7 @@ public class PopulationManager : MonoBehaviour
             Vector3 position = GetRandomPos();
             GameObject go = Instantiate<GameObject>(MinePrefab, position, Quaternion.identity);
 
-            bool good = Random.Range(-1.0f, 1.0f) >= 0;
+            bool good = i % 2 == 0;
 
             SetMineGood(good, go);
 
@@ -376,9 +454,7 @@ public class PopulationManager : MonoBehaviour
         else
             badMines.Remove(mine);
 
-        bool good = Random.Range(-1.0f, 1.0f) >= 0;
-
-        SetMineGood(good, mine);
+        SetMineGood(goodMines.Count <= badMines.Count, mine);
 
         mine.transform.position = GetRandomPos();
     }
