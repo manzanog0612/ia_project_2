@@ -82,7 +82,7 @@ namespace data
 
         public static Genome Cast_gemomeData_genome(GenomeData data)
         {
-            Genome genome = new Genome();
+            Genome genome = new Genome(data.genomes);
             genome.genome = new float[data.genome_count];
             for (int i = 0; i < data.genome_count; i++)
             {

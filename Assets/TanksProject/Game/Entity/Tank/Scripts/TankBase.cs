@@ -12,6 +12,7 @@ public class TankBase : MonoBehaviour
     protected GameObject goodMine;
     protected GameObject badMine;
     protected GameObject nearTank;
+    protected GameObject nearObstacle;
     protected float[] inputs;
 
     public void SetBrain(Genome genome, NeuralNetwork brain)
@@ -42,6 +43,11 @@ public class TankBase : MonoBehaviour
         nearTank = tank;
     }
 
+    public void SetNearestObstacle(GameObject obstacle)
+    {
+        nearObstacle = obstacle;
+    }
+
     public bool IsDead()
     {
         return dead;
@@ -52,10 +58,11 @@ public class TankBase : MonoBehaviour
         this.dead = dead;
     }
 
-    public bool IsCollidingWithTank()
+    public bool IsCollidingWithObstacle(GameObject obj)
     {
-        return (this.transform.position - nearTank.transform.position).sqrMagnitude <= 2.0f;
+        return (this.transform.position - obj.transform.position).sqrMagnitude <= 2.0f;
     }
+
 
     protected bool IsGoodMine(GameObject mine)
     {
@@ -113,6 +120,6 @@ public class TankBase : MonoBehaviour
 
     protected virtual void OnReset()
     {
-        SetDead(false);
+        //SetDead(false);
     }
 }

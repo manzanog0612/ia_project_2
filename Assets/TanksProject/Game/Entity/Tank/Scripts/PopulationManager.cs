@@ -8,6 +8,7 @@ public class PopulationManager : MonoBehaviour
 {
     public GameObject TankPrefab;
     public GameObject MinePrefab;
+    public GameObject[] obstacles;
 
     public int PopulationCount = 40;
     public int MinesCount = 50;
@@ -321,6 +322,22 @@ public class PopulationManager : MonoBehaviour
                 }
 
                 t.SetNearestTank(nearestTank);
+
+                GameObject nearestObstacle = null;
+                GameObject nearestObject = null;
+                closerDistance = 100000;
+                for (int j = 0; j < obstacles.Length; j++)
+                {
+                    float distance = Vector3.Distance(obstacles[j].transform.position, t.transform.position);
+
+                    if (distance < closerDistance)
+                    {
+                        closerDistance = distance;
+                        nearestObject = obstacles[j];
+                    }
+                }
+
+                t.SetNearestObstacle(nearestObject);
 
                 // Think!! 
                 t.Think(dt);
