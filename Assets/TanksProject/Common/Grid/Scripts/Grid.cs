@@ -68,6 +68,11 @@ namespace TanksProject.Common.Grid
         {
             return grid[gridPosition.x, gridPosition.y];
         }
+
+        public Vector3 GetTilePos(Vector2Int gridPosition)
+        {
+            return GetTile(gridPosition).go.transform.position; ;
+        }
         #endregion
 
         #region PRIVATE_METHODS

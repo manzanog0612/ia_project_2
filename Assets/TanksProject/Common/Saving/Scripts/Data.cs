@@ -1,10 +1,11 @@
+using TanksProject.Game.Data;
+
 namespace data
 {
     [System.Serializable]
     public class ConfigurationData
     {
         public   int population_count           ;
-        public   int mines_count                ;
         public   float generation_duration      ;
         public   int elites_count               ;
         public float mutation_chance            ;
@@ -66,17 +67,16 @@ namespace data
     }
     public static class Helper
     {
-        public static ConfigurationData Cast_pm_configuration(PopulationManager pm)
+        public static ConfigurationData Cast_pm_configuration()
         {
             ConfigurationData config = new();
-            config.population_count = pm.PopulationCount;
-            config.mines_count = pm.MinesCount;
-            config.generation_duration = pm.GenerationDuration;
-            config.elites_count = pm.EliteCount;
-            config.mutation_chance = pm.MutationChance;
-            config.mutation_rate = pm.MutationRate;
-            config.hidden_layers_count = pm.HiddenLayers;
-            config.neurons_per_hidden_layers = pm.NeuronsCountPerHL;
+            config.population_count = GameData.Inst.PopulationCount;
+            config.generation_duration = GameData.Inst.GenerationDuration;
+            config.elites_count = GameData.Inst.EliteCount;
+            config.mutation_chance = GameData.Inst.MutationChance;
+            config.mutation_rate = GameData.Inst.MutationRate;
+            config.hidden_layers_count = GameData.Inst.HiddenLayers;
+            config.neurons_per_hidden_layers = GameData.Inst.NeuronsCountPerHL;
             return config;
         }
 
