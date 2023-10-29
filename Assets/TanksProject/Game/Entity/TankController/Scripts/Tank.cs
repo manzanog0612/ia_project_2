@@ -27,12 +27,12 @@ namespace TanksProject.Game.Entity.TankController
             {
                 dirToMine.x,
                 dirToMine.z,
-                transform.forward.x,
-                transform.forward.z,
-                dirCloserTank.x,
-                dirCloserTank.z,
-                (nearTank.transform.position - transform.position).x / 10.0f,
-                (nearTank.transform.position - transform.position).z / 10.0f
+               //transform.forward.x,
+               //transform.forward.z,
+               //dirCloserTank.x,
+               //dirCloserTank.z,
+               //(nearTank.transform.position - transform.position).x / 10.0f,
+               //(nearTank.transform.position - transform.position).z / 10.0f
             };
 
             float[] output = brain.Synapsis(inputs.ToArray());

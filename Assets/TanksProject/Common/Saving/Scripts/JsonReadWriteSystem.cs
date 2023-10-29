@@ -1,14 +1,12 @@
 using System.IO;
-using Unity.VisualScripting.FullSerializer;
 using UnityEngine;
 
 namespace Utilities
 {
     public static class JsonReadWriteSystem
     {
-        private static string path = Application.dataPath + "/" + folder_name + "/";
+        private static string path = Application.dataPath + "/" + "TanksProject/Common/Saving/Saves";
 
-        private static string folder_name = "saves";
         public static void SaveToJson(data.ConfigurationData dataToSave, string fileName = "")
         {
 
@@ -43,9 +41,9 @@ namespace Utilities
 
             if (!Directory.Exists(path)) { Debug.Log("Path not exist, lets create"); Directory.CreateDirectory(path); }
 
-            if (fileName == "") { fileName = "file_" + Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly).Length; }
+            if (fileName == "") { fileName = "file_" + Directory.GetFiles(path + "/", "*", SearchOption.TopDirectoryOnly).Length; }
 
-            File.WriteAllText(Application.dataPath + "/" + folder_name + "/" + fileName + ".json", json);
+            File.WriteAllText(path + "/" + fileName + ".json", json);
         }
     }
 

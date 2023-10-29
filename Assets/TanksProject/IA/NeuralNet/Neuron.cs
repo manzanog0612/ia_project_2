@@ -43,7 +43,7 @@ public class Neuron
 	{
 		for (int i = 0; i < weights.Length; i++)
 		{
-			this.weights[i] = newWeights[i + fromId];
+			weights[i] = newWeights[i + fromId];
 		}
 
 		return fromId + weights.Length;
@@ -51,7 +51,7 @@ public class Neuron
 
 	public float[] GetWeights()
 	{
-		return this.weights;
+		return weights;
 	}
 
 	private float Sigmoid(float a)

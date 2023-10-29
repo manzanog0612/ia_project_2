@@ -3,7 +3,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-using TanksProject.Game.Entity.PopulationController;
 using TanksProject.Game.Data;
 
 namespace TanksProject.Game.UI
@@ -15,6 +14,7 @@ namespace TanksProject.Game.UI
         [SerializeField] private Slider timerSlider;
         [SerializeField] private Button pauseBtn;
         [SerializeField] private Button stopBtn;
+        [SerializeField] private Button saveBtn;
         [SerializeField] private GameObject startConfigurationScreen;
 
         [SerializeField] private SimulationStateView[] simulationStateViews = null;
@@ -27,34 +27,37 @@ namespace TanksProject.Game.UI
         #region ACTIONS
         private Action onStopSimulation = null;
         private Action onPauseSimulation = null;
+        private Action onSaveData = null;
         #endregion
 
         #region UNITY_CALLS
         private void Start()
         {
-            timerSlider.onValueChanged.AddListener(OnTimerChange);
+            timerSlider.onValueChanged.AddListener(OnTurnDurationChangeChange);
             timerText = timerTxt.text;
 
-            timerTxt.text = string.Format(timerText, GameData.Inst.IterationCount);
+            timerTxt.text = string.Format(timerText, GameData.Inst.TurnDuration * 100);
 
             pauseBtn.onClick.AddListener(OnPauseButtonClick);
             stopBtn.onClick.AddListener(OnStopButtonClick);
+            saveBtn.onClick.AddListener(OnSaveData);
         }
         #endregion
 
         #region PUBLIC_METHODS
-        public void Init(Action onPauseSimulation, Action onStopSimulation)
+        public void Init(Action onPauseSimulation, Action onStopSimulation, Action onSaveData)
         {
             this.onPauseSimulation = onPauseSimulation;
             this.onStopSimulation = onStopSimulation;
+            this.onSaveData = onSaveData;
         }
         #endregion
 
         #region PRIVATE_FIELDS
-        private void OnTimerChange(float value)
+        private void OnTurnDurationChangeChange(float value)
         {
-            GameData.Inst.IterationCount = (int)value;
-            timerTxt.text = string.Format(timerText, GameData.Inst.IterationCount);
+            GameData.Inst.TurnDuration = value / 100f;
+            timerTxt.text = string.Format(timerText, (int)(GameData.Inst.TurnDuration * 100));
         }
 
         private void OnPauseButtonClick()
@@ -73,6 +76,11 @@ namespace TanksProject.Game.UI
             {
                 simulationStateViews[i].OnStopButtonClick();
             }
+        }
+
+        private void OnSaveData()
+        {
+            onSaveData.Invoke();
         }
         #endregion
     }

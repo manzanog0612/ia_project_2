@@ -89,7 +89,7 @@ namespace TanksProject.Game.Entity.PopulationController
 
         public void StartLoadedSimulation(SimData sim)
         {
-            genAlg = new GeneticAlgorithm(GameData.Inst.EliteCount, GameData.Inst.MutationChance, GameData.Inst.MutationRate);
+            genAlg = new GeneticAlgorithm(sim.config.elites_count, sim.config.mutation_chance, sim.config.mutation_rate);
 
             LoadInitialPopulation(sim);
 
@@ -119,36 +119,20 @@ namespace TanksProject.Game.Entity.PopulationController
             DestroyTanks();
         }
 
-        public void SaveCurrentSim()
+        public TeamData GetCurrentTeamData()
         {
-            //ConfigurationData config = new();
-            //config.population_count = PopulationCount;
-            //config.mines_count = MinesCount;
-            //config.generation_duration = GenerationDuration;
-            //config.mutation_chance = MutationChance;
-            //config.mutation_rate = MutationRate;
-            //config.hidden_layers_count = HiddenLayers;
-            //config.neurons_per_hidden_layers = NeuronsCountPerHL;
-            //config.elites_count = EliteCount;
-            //config.bias = -Bias;
-            //config.sigmoid = P;
-            //SimData simData = new data.SimData();
-            //simData.config = config;
-            //simData.avgFitness = AvgFitness;
-            //simData.bestFitness = BestFitness;
-            //simData.worstFitness = WorstFitness;
-            //simData.generation_count = Generation;
-            //simData.genomes_count = PopulationCount;
-            //simData.genomes = new GenomeData[PopulationCount];
-            //
-            //for (int i = 0; i < PopulationCount; i++)
-            //{
-            //    simData.genomes[i] = new data.GenomeData();
-            //    simData.genomes[i].genome_count = population[i].genome.Length;
-            //    simData.genomes[i].genomes = population[i].genome;
-            //    simData.genomes[i].fitness = population[i].fitness;
-            //}
-            //Utilities.SaveLoadSystem.SaveConfig(simData);
+            TeamData teamData = new TeamData();
+            teamData.generation_count = Generation;
+            teamData.genomes = new GenomeData[GameData.Inst.PopulationCount];
+
+            for (int i = 0; i < GameData.Inst.PopulationCount; i++)
+            {
+                teamData.genomes[i] = new GenomeData();
+                teamData.genomes[i].genomes = brains[i].GetWeights();
+                teamData.genomes[i].fitness = population[i].fitness;
+            }
+
+            return teamData;
         }        
         #endregion
 
@@ -212,28 +196,24 @@ namespace TanksProject.Game.Entity.PopulationController
             }
         }
 
-        private bool LoadInitialPopulation(SimData sim)
+        private void LoadInitialPopulation(SimData sim)
         {
-            ConfigurationData config = sim.config;
-            Generation = sim.generation_count;
-
-            BestFitness = sim.bestFitness;
-            AvgFitness = sim.avgFitness;
-            WorstFitness = sim.worstFitness;
+            TeamData team = sim.teamsData[(int)this.team];
+            Generation = team.generation_count;
 
             DestroyTanks();
 
-            if (sim.genomes_count != config.population_count)
+            if (team.genomes.Length < GameData.Inst.PopulationCount)
             {
-                Debug.Log("load genomes count has not same amount of population count");
-                return false;
+                Debug.LogError("load genomes count has not same amount of population count");
+                return;
             }
 
-            for (int i = 0; i < config.population_count; i++)
+            for (int i = 0; i < GameData.Inst.PopulationCount; i++)
             {
                 NeuralNetwork brain = CreateBrain();
 
-                Genome genome = Helper.Cast_gemomeData_genome(sim.genomes[i]);
+                Genome genome = Helper.Cast_gemomeData_genome(team.genomes[i]);
 
                 brain.SetWeights(genome.genome);
                 brains.Add(brain);
@@ -241,8 +221,6 @@ namespace TanksProject.Game.Entity.PopulationController
                 population.Add(genome);
                 tanks.Add(CreateTank(genome, brain, tankStartTiles[i]));
             }
-
-            return true;
         }
 
         // Creates a new NeuralNetwork
@@ -250,16 +228,16 @@ namespace TanksProject.Game.Entity.PopulationController
         {
             NeuralNetwork brain = new NeuralNetwork();
 
-            // Add first neuron layer that has as many neurons as inputs
+            // Inputs
             brain.AddFirstNeuronLayer(GameData.Inst.InputsCount, GameData.Inst.Bias, GameData.Inst.P);
 
             for (int i = 0; i < GameData.Inst.HiddenLayers; i++)
             {
-                // Add each hidden layer with custom neurons count
+                // Add each hidden layer
                 brain.AddNeuronLayer(GameData.Inst.NeuronsCountPerHL, GameData.Inst.Bias, GameData.Inst.P);
             }
 
-            // Add the output layer with as many neurons as outputs
+            // Outputs
             brain.AddNeuronLayer(GameData.Inst.OutputsCount, GameData.Inst.Bias, GameData.Inst.P);
 
             return brain;
@@ -303,11 +281,6 @@ namespace TanksProject.Game.Entity.PopulationController
             {
                 GameData.Inst.TestIndex++;
             }
-        }
-
-        private void UpdateTurn()
-        { 
-
         }
         #endregion
 

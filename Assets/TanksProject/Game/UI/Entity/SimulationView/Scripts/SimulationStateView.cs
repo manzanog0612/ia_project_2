@@ -17,7 +17,6 @@ namespace TanksProject.Game.UI
         [SerializeField] private Text bestFitnessTxt;
         [SerializeField] private Text avgFitnessTxt;
         [SerializeField] private Text worstFitnessTxt;
-        [SerializeField] private Button saveSimBtn;
         #endregion
 
         #region PRIVATE_FIELDS
@@ -54,8 +53,6 @@ namespace TanksProject.Game.UI
             {
                 worstFitnessText = worstFitnessTxt.text;
             }
-
-            saveSimBtn.onClick.AddListener(OnSaveSim);
         }
 
         private void OnEnable()
@@ -100,13 +97,6 @@ namespace TanksProject.Game.UI
         public void OnStopButtonClick()
         {
             lastGeneration = 0;
-        }
-        #endregion
-
-        #region PRIVATE_METHODS
-        private void OnSaveSim()
-        {
-            populationManager.SaveCurrentSim();
         }
         #endregion
     }

@@ -3,8 +3,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-using TanksProject.Game.Entity.PopulationController;
 using TanksProject.Game.Data;
+
 using data;
 
 namespace TanksProject.Game.UI
@@ -14,8 +14,10 @@ namespace TanksProject.Game.UI
         #region EXPOSED_FIELDS
         [SerializeField] private Text populationCountTxt;
         [SerializeField] private Slider populationCountSlider;
-        [SerializeField] private Text generationDurationTxt;
-        [SerializeField] private Slider generationDurationSlider;
+        [SerializeField] private Text turnsPerGenerationTxt;
+        [SerializeField] private Slider turnsPerGenerationSlider;
+        [SerializeField] private Text turnDurationTxt;
+        [SerializeField] private Slider turnDurationSlider;
         [SerializeField] private Text eliteCountTxt;
         [SerializeField] private Slider eliteCountSlider;
         [SerializeField] private Text mutationChanceTxt;
@@ -31,15 +33,14 @@ namespace TanksProject.Game.UI
         [SerializeField] private Text sigmoidSlopeTxt;
         [SerializeField] private Slider sigmoidSlopeSlider;
         [SerializeField] private Button startButton;
-        [SerializeField] private Button loadButton;
-        [SerializeField] private Button saveButton;
         [SerializeField] private Button loadSimButton;
         [SerializeField] private GameObject simulationScreen;
         #endregion
 
         #region PRIVATE_FIELDS
         private string populationText;
-        private string generationDurationText;
+        private string turnsPerGenerationText;
+        private string turnDurationText;
         private string elitesText;
         private string mutationChanceText;
         private string mutationRateText;
@@ -58,7 +59,8 @@ namespace TanksProject.Game.UI
         private void Start()
         {
             populationCountSlider.onValueChanged.AddListener(OnPopulationCountChange);
-            generationDurationSlider.onValueChanged.AddListener(OnTurnsPerGenerationChange);
+            turnsPerGenerationSlider.onValueChanged.AddListener(OnTurnsPerGenerationChange);
+            turnDurationSlider.onValueChanged.AddListener(OnTurnDurationChange);
             eliteCountSlider.onValueChanged.AddListener(OnEliteCountChange);
             mutationChanceSlider.onValueChanged.AddListener(OnMutationChanceChange);
             mutationRateSlider.onValueChanged.AddListener(OnMutationRateChange);
@@ -68,7 +70,8 @@ namespace TanksProject.Game.UI
             sigmoidSlopeSlider.onValueChanged.AddListener(OnSigmoidSlopeChange);
 
             populationText = populationCountTxt.text;
-            generationDurationText = generationDurationTxt.text;
+            turnsPerGenerationText = turnsPerGenerationTxt.text;
+            turnDurationText = turnDurationTxt.text;
             elitesText = eliteCountTxt.text;
             mutationChanceText = mutationChanceTxt.text;
             mutationRateText = mutationRateTxt.text;
@@ -78,7 +81,8 @@ namespace TanksProject.Game.UI
             sigmoidSlopeText = sigmoidSlopeTxt.text;
 
             populationCountSlider.value = GameData.Inst.PopulationCount;
-            generationDurationSlider.value = GameData.Inst.TurnsPerGeneration;
+            turnsPerGenerationSlider.value = GameData.Inst.TurnsPerGeneration;
+            turnDurationSlider.value = GameData.Inst.TurnDuration * 100.0f;
             eliteCountSlider.value = GameData.Inst.EliteCount;
             mutationChanceSlider.value = GameData.Inst.MutationChance * 100.0f;
             mutationRateSlider.value = GameData.Inst.MutationRate * 100.0f;
@@ -88,8 +92,6 @@ namespace TanksProject.Game.UI
             sigmoidSlopeSlider.value = GameData.Inst.P;
 
             startButton.onClick.AddListener(OnStartButtonClick);
-            loadButton.onClick.AddListener(OnLoadData);
-            saveButton.onClick.AddListener(OnSaveConfig);
             loadSimButton.onClick.AddListener(OnLoadSim);
         }
         #endregion
@@ -103,30 +105,20 @@ namespace TanksProject.Game.UI
         #endregion
 
         #region PRIVATE_FIELDS
-        private void OnLoadData()
-        {
-
-            data.ConfigurationData config = Utilities.SaveLoadSystem.LoadConfigFile();
-            if (config == null) return;
-            populationCountSlider.onValueChanged.Invoke(config.population_count);
-            generationDurationSlider.onValueChanged.Invoke(config.generation_duration);
-            eliteCountSlider.onValueChanged.Invoke(config.elites_count);
-            mutationChanceSlider.onValueChanged.Invoke(config.mutation_chance * 100.0f);
-            mutationRateSlider.onValueChanged.Invoke(config.mutation_rate * 100.0f);
-            hiddenLayersCountSlider.onValueChanged.Invoke(config.hidden_layers_count);
-            neuronsPerHLSlider.onValueChanged.Invoke(config.neurons_per_hidden_layers);
-            biasSlider.onValueChanged.Invoke(-config.bias);
-            sigmoidSlopeSlider.onValueChanged.Invoke(config.sigmoid);
-        }
-
         private void OnLoadSim()
         {
-            data.SimData sim = Utilities.SaveLoadSystem.LoadSimFile();
+            SimData sim = Utilities.SaveLoadSystem.LoadSimFile();
 
-            data.ConfigurationData config = sim.config; if (config == null) return;
+            ConfigurationData config = sim.config;
+
+            if (config == null)
+            { 
+                return; 
+            }
 
             populationCountSlider.onValueChanged.Invoke(config.population_count);
-            generationDurationSlider.onValueChanged.Invoke(config.generation_duration);
+            turnsPerGenerationSlider.onValueChanged.Invoke(config.turnsPerGeneration);
+            turnDurationSlider.onValueChanged.Invoke(config.turnDuration * 100);
             eliteCountSlider.onValueChanged.Invoke(config.elites_count);
             mutationChanceSlider.onValueChanged.Invoke(config.mutation_chance * 100.0f);
             mutationRateSlider.onValueChanged.Invoke(config.mutation_rate * 100.0f);
@@ -141,22 +133,6 @@ namespace TanksProject.Game.UI
             simulationScreen.SetActive(true);
         }
 
-        private void OnSaveConfig()
-        {
-            //change to use population manager.
-            data.ConfigurationData config = new();
-            config.population_count = (int)populationCountSlider.value;
-            config.generation_duration = generationDurationSlider.value;
-            config.mutation_chance = mutationChanceSlider.value;
-            config.mutation_rate = mutationRateSlider.value;
-            config.hidden_layers_count = hiddenLayersCountSlider.value;
-            config.neurons_per_hidden_layers = neuronsPerHLSlider.value;
-            config.elites_count = (int)eliteCountSlider.value;
-            config.bias = -biasSlider.value;
-            config.sigmoid = sigmoidSlopeSlider.value;
-            Utilities.SaveLoadSystem.SaveConfig(config);
-        }
-
         private void OnPopulationCountChange(float value)
         {
             GameData.Inst.PopulationCount = (int)value;
@@ -168,9 +144,14 @@ namespace TanksProject.Game.UI
         {
             GameData.Inst.TurnsPerGeneration = (int)value;
 
-            generationDurationTxt.text = string.Format(generationDurationText, GameData.Inst.TurnsPerGeneration);
+            turnsPerGenerationTxt.text = string.Format(turnsPerGenerationText, GameData.Inst.TurnsPerGeneration);
         }
+        private void OnTurnDurationChange(float value)
+        {
+            GameData.Inst.TurnDuration = value / 100.0f;
 
+            turnDurationTxt.text = string.Format(turnDurationText, (int)(GameData.Inst.TurnDuration * 100));
+        }
         private void OnEliteCountChange(float value)
         {
             GameData.Inst.EliteCount = (int)value;

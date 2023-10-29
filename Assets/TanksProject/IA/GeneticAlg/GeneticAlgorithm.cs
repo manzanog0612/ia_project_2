@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 
 public class Genome
@@ -9,7 +8,7 @@ public class Genome
 
 	public Genome(float[] genes)
 	{
-		this.genome = genes;
+		genome = genes;
 		fitness = 0;
 	}
 
@@ -27,7 +26,6 @@ public class Genome
     {
         fitness = 0;
     }
-
 }
 
 public class GeneticAlgorithm 

@@ -9,6 +9,7 @@ using TanksProject.Game.Data;
 using TanksProject.Game.UI;
 
 using data;
+using Palmmedia.ReportGenerator.Core;
 
 namespace TanksProject.Game
 {
@@ -25,6 +26,8 @@ namespace TanksProject.Game
 
         #region PRIVATE_FIELDS
         private Dictionary<TEAM, PopulationManager> populationManagers = new Dictionary<TEAM, PopulationManager>();
+
+        private bool simulationOn = false;
         #endregion
 
         #region UNITY_CALLS
@@ -35,6 +38,11 @@ namespace TanksProject.Game
 
         private void FixedUpdate()
         {
+            if (!simulationOn)
+            {
+                return;
+            }
+
             GameData.Inst.UpdateTime(Time.fixedDeltaTime);
         }
         #endregion
@@ -55,7 +63,7 @@ namespace TanksProject.Game
             Camera.main.transform.position = new Vector3(grid.Width / 2, 10, grid.Height / 2 + 5);
 
             startConfigurationScreen.Init(StartSimulation, StartLoadedSimulation);
-            simulationScreen.Init(PauseSimulation, StopSimulation);
+            simulationScreen.Init(PauseSimulation, StopSimulation, SaveSimulation);
         }
         #endregion
 
@@ -74,6 +82,31 @@ namespace TanksProject.Game
             return gridPos;
         }
 
+        private void SaveSimulation()
+        {
+            ConfigurationData config = new();
+            config.population_count = GameData.Inst.PopulationCount;
+            config.turnsPerGeneration = GameData.Inst.TurnsPerGeneration;
+            config.turnDuration = GameData.Inst.TurnDuration;
+            config.mutation_chance = GameData.Inst.MutationChance;
+            config.mutation_rate = GameData.Inst.MutationRate;
+            config.hidden_layers_count = GameData.Inst.HiddenLayers;
+            config.neurons_per_hidden_layers = GameData.Inst.NeuronsCountPerHL;
+            config.elites_count = GameData.Inst.EliteCount;
+            config.bias = -GameData.Inst.Bias;
+            config.sigmoid = GameData.Inst.P;
+            SimData simData = new SimData();
+            simData.config = config;
+            simData.teamsData = new TeamData[populationManagers.Count];
+
+            for (int i = 0; i < Enum.GetValues(typeof(TEAM)).Length; i++)
+            {
+                simData.teamsData[i] = populationManagers[(TEAM)i].GetCurrentTeamData();
+            }
+
+            Utilities.SaveLoadSystem.SaveConfig(simData);
+        }
+
         private void StartSimulation()
         {
             for (int i = 0; i < Enum.GetValues(typeof(TEAM)).Length; i++)
@@ -82,6 +115,9 @@ namespace TanksProject.Game
             }
 
             minesManager.CreateMines();
+
+            GameData.Inst.Reset();
+            simulationOn = true;
         }
 
         private void StartLoadedSimulation(SimData simData)
@@ -92,6 +128,8 @@ namespace TanksProject.Game
             }
 
             minesManager.CreateMines();
+
+            simulationOn = true;
         }
 
         private void StopSimulation()
@@ -102,6 +140,9 @@ namespace TanksProject.Game
             }
 
             minesManager.DestroyMines();
+
+            GameData.Inst.Reset();
+            simulationOn = false;
         }
 
         private void PauseSimulation()
@@ -110,6 +151,8 @@ namespace TanksProject.Game
             {
                 populationManagers[(TEAM)i].PauseSimulation();
             }
+
+            simulationOn = false;
         }
         #endregion
     }
