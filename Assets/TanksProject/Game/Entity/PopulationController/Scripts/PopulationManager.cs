@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 using UnityEngine;
 
@@ -8,7 +9,6 @@ using TanksProject.Game.Data;
 using data;
 
 using Grid = TanksProject.Common.Grid.Grid;
-using System;
 
 namespace TanksProject.Game.Entity.PopulationController
 {
@@ -24,11 +24,10 @@ namespace TanksProject.Game.Entity.PopulationController
         #region PRIVATE_FIELDS
         private GeneticAlgorithm genAlg;
 
-        private List<Tank> populationGOs = new List<Tank>();
+        private List<Tank> tanks = new List<Tank>();
         private List<Genome> population = new List<Genome>();
         private List<NeuralNetwork> brains = new List<NeuralNetwork>();
 
-        private float accumTime = 0;
         private bool isRunning = false;
 
         private Grid grid = null;
@@ -57,33 +56,23 @@ namespace TanksProject.Game.Entity.PopulationController
 
             float dt = Time.fixedDeltaTime;
 
-            for (int i = 0; i < Mathf.Clamp((float)(GameData.Inst.IterationCount / 100.0f) * 50, 1, 50); i++)
+            if (GameData.Inst.GenerationFinished)
             {
-                foreach (Tank t in populationGOs)
+                Epoch();
+            }
+            else if (GameData.Inst.TurnFinished)
+            {
+                for (int i = 0; i < tanks.Count; i++)
                 {
-                    // Get the nearest mine
+                    Tank t = tanks[i];
+
                     GameObject mine = onGetNearestMine.Invoke(t.transform.position);
                     t.SetNearestMine(mine);
 
                     GameObject nearestTank = GetNearestTank(t.gameObject);
                     t.SetNearestTank(nearestTank);
 
-                    //GameObject nearestObstacle = GetNearestObstacle(t.transform.position);
-                    //t.SetNearestObstacle(nearestObstacle);
-
                     t.Think(dt);
-
-                    // Set tank position
-                    t.transform.position = AdjustPosToExtents(t.transform.position);
-                }
-
-                // Check the time to evolve
-                accumTime += dt;
-                if (accumTime >= GameData.Inst.GenerationDuration)
-                {
-                    accumTime -= GameData.Inst.GenerationDuration;
-                    Epoch();
-                    break;
                 }
             }
         }
@@ -160,8 +149,7 @@ namespace TanksProject.Game.Entity.PopulationController
             //    simData.genomes[i].fitness = population[i].fitness;
             //}
             //Utilities.SaveLoadSystem.SaveConfig(simData);
-        }
-        
+        }        
         #endregion
 
         #region PRIVATE_METHODS
@@ -220,10 +208,8 @@ namespace TanksProject.Game.Entity.PopulationController
                 brains.Add(brain);
 
                 population.Add(genome);
-                populationGOs.Add(CreateTank(genome, brain, tankStartTiles[i]));
+                tanks.Add(CreateTank(genome, brain, tankStartTiles[i]));
             }
-
-            accumTime = 0.0f;
         }
 
         private bool LoadInitialPopulation(SimData sim)
@@ -253,10 +239,9 @@ namespace TanksProject.Game.Entity.PopulationController
                 brains.Add(brain);
 
                 population.Add(genome);
-                populationGOs.Add(CreateTank(genome, brain, tankStartTiles[i]));
+                tanks.Add(CreateTank(genome, brain, tankStartTiles[i]));
             }
 
-            accumTime = 0.0f;
             return true;
         }
 
@@ -307,9 +292,9 @@ namespace TanksProject.Game.Entity.PopulationController
 
                 brain.SetWeights(newGenomes[i].genome);
 
-                populationGOs[i].SetBrain(newGenomes[i], brain);
-                populationGOs[i].transform.position = grid.GetTilePos(tankStartTiles[i]);
-                populationGOs[i].transform.rotation = Quaternion.identity;
+                tanks[i].SetBrain(newGenomes[i], brain);
+                tanks[i].SetCurrentTile(tankStartTiles[i]);
+                tanks[i].transform.rotation = Quaternion.identity;
             }
 
             if (Generation > 1 && 
@@ -319,26 +304,32 @@ namespace TanksProject.Game.Entity.PopulationController
                 GameData.Inst.TestIndex++;
             }
         }
+
+        private void UpdateTurn()
+        { 
+
+        }
         #endregion
 
         #region UTILS
         private Tank CreateTank(Genome genome, NeuralNetwork brain, Vector2Int gridPos)
         {
             Vector3 position = grid.GetTilePos(gridPos);
-            GameObject go = Instantiate(TankPrefab, position, Quaternion.identity);
+            GameObject go = Instantiate(TankPrefab, position, Quaternion.identity, transform);
             Tank t = go.GetComponent<Tank>();
+            t.Init(grid, gridPos, GameData.Inst.TurnDuration);
             t.SetBrain(genome, brain);
             return t;
         }
 
         private void DestroyTanks()
         {
-            foreach (Tank go in populationGOs)
+            foreach (Tank go in tanks)
             { 
                 Destroy(go.gameObject); 
             }
 
-            populationGOs.Clear();
+            tanks.Clear();
             population.Clear();
             brains.Clear();
         }
@@ -347,46 +338,23 @@ namespace TanksProject.Game.Entity.PopulationController
         {
             GameObject nearestTank = null;
             float closerDistance = 100000;
-            for (int j = 0; j < populationGOs.Count; j++)
+            for (int j = 0; j < tanks.Count; j++)
             {
-                if (populationGOs[j].gameObject == actualTank)
+                if (tanks[j].gameObject == actualTank)
                 {
                     continue;
                 }
 
-                float distance = Vector3.Distance(populationGOs[j].transform.position, actualTank.transform.position);
+                float distance = Vector3.Distance(tanks[j].transform.position, actualTank.transform.position);
 
                 if (distance < closerDistance)
                 {
                     closerDistance = distance;
-                    nearestTank = populationGOs[j].gameObject;
+                    nearestTank = tanks[j].gameObject;
                 }
             }
 
             return nearestTank;
-        }
-
-        private Vector3 AdjustPosToExtents(Vector3 pos)
-        {
-            //if (pos.x > GameData.Inst.SceneHalfExtents.x)
-            //{
-            //    pos.x -= SceneHalfExtents.x * 2;
-            //}
-            //else if (pos.x < -SceneHalfExtents.x)
-            //{
-            //    pos.x += SceneHalfExtents.x * 2;
-            //}
-            //
-            //if (pos.z > SceneHalfExtents.z)
-            //{
-            //    pos.z -= SceneHalfExtents.z * 2;
-            //}
-            //else if (pos.z < -SceneHalfExtents.z)
-            //{
-            //    pos.z += SceneHalfExtents.z * 2;
-            //}
-
-            return pos;
         }
         #endregion
 

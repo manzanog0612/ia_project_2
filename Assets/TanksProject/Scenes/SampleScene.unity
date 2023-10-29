@@ -4215,14 +4215,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   PopulationCount: 20
-  GenerationDuration: 30
   IterationCount: 1
   EliteCount: 2
   MutationChance: 0.11
   MutationRate: 0.1
-  InputsCount: 18
+  TurnsPerGeneration: 50
+  TurnDuration: 0.1
+  InputsCount: 8
   HiddenLayers: 7
-  OutputsCount: 2
+  OutputsCount: 1
   NeuronsCountPerHL: 15
   Bias: -1
   P: 0.5

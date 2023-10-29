@@ -30,13 +30,14 @@ namespace TanksProject.Game.Data
         [Header("Population")]
         public int PopulationCount = 0;
 
-        public float GenerationDuration = 0;
         public int IterationCount = 0;
 
         public int EliteCount = 0;
         public float MutationChance = 0;
         public float MutationRate = 0;
 
+        public float TurnsPerGeneration = 0;
+        public float TurnDuration = 0;
         public int InputsCount = 0;
         public int HiddenLayers = 0;
         public int OutputsCount = 0;
@@ -68,8 +69,41 @@ namespace TanksProject.Game.Data
 
             return populationManagers[team];
         }
+
+        public float TurnTime { get; private set; }
+        public bool TurnFinished { get; private set; }
+        public int CurrentTurn { get; private set; }
+        public bool GenerationFinished { get; private set; }
         #endregion
 
+        #region PUBLIC_METHODS
+        private void Awake()
+        {
+            TurnTime = 0;
+            TurnFinished = false;
+            CurrentTurn = 0;
+        }
 
+        public void UpdateTime(float dt)
+        {
+            TurnFinished = false;
+            GenerationFinished = false;
+
+            TurnTime += dt;
+
+            if (TurnTime >= TurnDuration)
+            {
+                TurnTime = 0;
+                TurnFinished = true;
+                CurrentTurn++;
+
+                if (CurrentTurn == TurnsPerGeneration)
+                {
+                    GenerationFinished = true;
+                    CurrentTurn = 0;
+                }
+            }
+        }
+        #endregion
     }
 }

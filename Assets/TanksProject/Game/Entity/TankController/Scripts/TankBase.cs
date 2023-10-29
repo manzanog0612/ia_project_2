@@ -15,10 +15,26 @@ namespace TanksProject.Game.Entity.TankController
         protected NeuralNetwork brain;
         protected GameObject nearMine;
         protected GameObject nearTank;
+        protected Common.Grid.Grid grid;
         protected float[] inputs;
+        protected Vector2Int currentTile = Vector2Int.zero;
+        protected float turnDuration = 1f;
         #endregion
 
         #region PUBLIC_METHODS
+        public void Init(Common.Grid.Grid grid, Vector2Int currentTile, float turnDuration)
+        {
+            this.grid = grid;
+            this.currentTile = currentTile;
+            this.turnDuration = turnDuration;
+        }
+
+        public void SetCurrentTile(Vector2Int currentTile)
+        {
+            this.currentTile = currentTile;
+            transform.position = grid.GetTilePos(currentTile);
+        }
+
         public void SetBrain(Genome genome, NeuralNetwork brain)
         {
             this.genome = genome;
@@ -84,13 +100,29 @@ namespace TanksProject.Game.Entity.TankController
             return (this.transform.position - nearMine.transform.position).sqrMagnitude <= 2.0f;
         }
 
-        protected void SetForces(float leftForce, float rightForce, float dt)
+        protected void SetMovement(Vector2Int movement, float dt)
         {
-            Vector3 pos = transform.position;
-            float rotFactor = Mathf.Clamp((rightForce - leftForce), -1.0f, 1.0f);
-            transform.rotation *= Quaternion.AngleAxis(rotFactor * RotSpeed * dt, Vector3.up);
-            pos += transform.forward * Mathf.Abs(rightForce + leftForce) * 0.5f * Speed * dt;
-            transform.position = pos;
+            currentTile += movement;
+
+            if (currentTile.x == grid.Width)
+            {
+                currentTile.x = 0;
+            }
+            else if (currentTile.x == -1)
+            {
+                currentTile.x = grid.Width - 1;
+            }
+
+            if (currentTile.y == grid.Height)
+            {
+                currentTile.y = grid.Height - 1;
+            }
+            else if (currentTile.y == -1)
+            {
+                currentTile.y = 0;
+            }
+
+            transform.position = grid.GetTilePos(currentTile);
         }
 
         protected virtual void OnThink(float dt)

@@ -18,35 +18,22 @@ namespace TanksProject.Game.Entity.TankController
 
         protected override void OnThink(float dt)
         {
-            Vector3 dirToGoodMine = GetDirToObject(nearMine);
-            //Vector3 dirToBadMine = GetDirToObject(null);
+            Vector3 dirToMine = GetDirToObject(nearMine);
             Vector3 dirCloserTank = GetDirToObject(nearTank);
-            //Vector3 dirCloserObstacle = GetDirToObject(nearTank);
 
             float distanceToGoodMine = GetDistToObject(nearMine);
-            //float distanceToBadMine = GetDistToObject(null);
 
             List<float> inputs = new List<float>
             {
-            dirToGoodMine.x,
-            dirToGoodMine.z,
-            //(goodMine.transform.position - transform.position).x / 10.0f,
-            //(goodMine.transform.position - transform.position).z / 10.0f,
-            //dirToBadMine.x,
-            //dirToBadMine.z,
-            //(badMine.transform.position - transform.position).x / 10.0f,
-            //(badMine.transform.position - transform.position).z / 10.0f,
-            transform.forward.x,
-            transform.forward.z,
-            dirCloserTank.x,
-            dirCloserTank.z,
-            (nearTank.transform.position - transform.position).x / 10.0f,
-            (nearTank.transform.position - transform.position).z / 10.0f,
-            //dirCloserObstacle.x,
-            //dirCloserObstacle.z,
-            //(nearObstacle.transform.position - transform.position).x / 10.0f,
-            //(nearObstacle.transform.position - transform.position).z / 10.0f
-        };
+                dirToMine.x,
+                dirToMine.z,
+                transform.forward.x,
+                transform.forward.z,
+                dirCloserTank.x,
+                dirCloserTank.z,
+                (nearTank.transform.position - transform.position).x / 10.0f,
+                (nearTank.transform.position - transform.position).z / 10.0f
+            };
 
             float[] output = brain.Synapsis(inputs.ToArray());
 
@@ -75,7 +62,7 @@ namespace TanksProject.Game.Entity.TankController
                     break;
             }
 
-            SetForces(output[0], output[1], dt);
+            SetMovement(TraduceMovement(output[0]), dt);
         }
 
         protected override void OnTakeMine(GameObject mine)
@@ -140,6 +127,30 @@ namespace TanksProject.Game.Entity.TankController
             //{
             //    SetFitness(fitness - 5f);
             //}
+        }
+
+        private Vector2Int TraduceMovement(float movement)
+        {
+            if (movement > 0.8)
+            {
+                return Vector2Int.up;
+            }
+            else if (movement > 0.6)
+            {
+                return Vector2Int.right;
+            }
+            else if (movement > 0.4)
+            {
+                return Vector2Int.down;
+            }
+            else if (movement > 0.2)
+            {
+                return Vector2Int.left;
+            }
+            else
+            {
+                return Vector2Int.zero;
+            }
         }
         #endregion
 

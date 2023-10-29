@@ -58,7 +58,7 @@ namespace TanksProject.Game.UI
         private void Start()
         {
             populationCountSlider.onValueChanged.AddListener(OnPopulationCountChange);
-            generationDurationSlider.onValueChanged.AddListener(OnGenerationDurationChange);
+            generationDurationSlider.onValueChanged.AddListener(OnTurnsPerGenerationChange);
             eliteCountSlider.onValueChanged.AddListener(OnEliteCountChange);
             mutationChanceSlider.onValueChanged.AddListener(OnMutationChanceChange);
             mutationRateSlider.onValueChanged.AddListener(OnMutationRateChange);
@@ -78,7 +78,7 @@ namespace TanksProject.Game.UI
             sigmoidSlopeText = sigmoidSlopeTxt.text;
 
             populationCountSlider.value = GameData.Inst.PopulationCount;
-            generationDurationSlider.value = GameData.Inst.GenerationDuration;
+            generationDurationSlider.value = GameData.Inst.TurnsPerGeneration;
             eliteCountSlider.value = GameData.Inst.EliteCount;
             mutationChanceSlider.value = GameData.Inst.MutationChance * 100.0f;
             mutationRateSlider.value = GameData.Inst.MutationRate * 100.0f;
@@ -164,11 +164,11 @@ namespace TanksProject.Game.UI
             populationCountTxt.text = string.Format(populationText, GameData.Inst.PopulationCount);
         }
 
-        private void OnGenerationDurationChange(float value)
+        private void OnTurnsPerGenerationChange(float value)
         {
-            GameData.Inst.GenerationDuration = (int)value;
+            GameData.Inst.TurnsPerGeneration = (int)value;
 
-            generationDurationTxt.text = string.Format(generationDurationText, GameData.Inst.GenerationDuration);
+            generationDurationTxt.text = string.Format(generationDurationText, GameData.Inst.TurnsPerGeneration);
         }
 
         private void OnEliteCountChange(float value)

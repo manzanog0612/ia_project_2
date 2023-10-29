@@ -71,7 +71,7 @@ namespace data
         {
             ConfigurationData config = new();
             config.population_count = GameData.Inst.PopulationCount;
-            config.generation_duration = GameData.Inst.GenerationDuration;
+            config.generation_duration = GameData.Inst.TurnsPerGeneration;
             config.elites_count = GameData.Inst.EliteCount;
             config.mutation_chance = GameData.Inst.MutationChance;
             config.mutation_rate = GameData.Inst.MutationRate;

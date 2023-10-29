@@ -32,6 +32,11 @@ namespace TanksProject.Game
         {
             Init();
         }
+
+        private void FixedUpdate()
+        {
+            GameData.Inst.UpdateTime(Time.fixedDeltaTime);
+        }
         #endregion
 
         #region PRIVATE_METHODS
