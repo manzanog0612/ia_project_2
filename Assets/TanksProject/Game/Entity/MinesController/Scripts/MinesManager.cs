@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 using TanksProject.Game.Data;
+using TanksProject.Game.Entity.MineController;
 
 namespace TanksProject.Game.Entity.MinesController
 {
@@ -13,7 +14,7 @@ namespace TanksProject.Game.Entity.MinesController
         #endregion
 
         #region PRIVATE_FIELDS
-        private List<GameObject> mines = new List<GameObject>();
+        private List<Mine> mines = new List<Mine>();
 
         private Common.Grid.Grid grid = null;
         #endregion
@@ -30,28 +31,32 @@ namespace TanksProject.Game.Entity.MinesController
 
             for (int i = 0; i < GameData.Inst.MinesCount; i++)
             {
-                Vector3 position = GetRandomPos();
-                GameObject go = Instantiate(MinePrefab, position, Quaternion.identity);
-                mines.Add(go);
+                Vector2Int tile = GetRandomTile();
+                Vector3 pos = grid.GetTilePos(tile);
+                GameObject go = Instantiate(MinePrefab, pos, Quaternion.identity, transform);
+
+                Mine mine = go.GetComponent<Mine>();
+                mine.SetTile(tile);
+                mines.Add(mine);
             }
         }
 
         public void DestroyMines()
         {
-            foreach (GameObject go in mines)
+            foreach (Mine go in mines)
             { 
-                Destroy(go); 
+                Destroy(go.gameObject); 
             }
 
             mines.Clear();
         }
 
-        public GameObject GetNearestMine(Vector3 pos)
+        public Mine GetNearestMine(Vector3 pos)
         {
-            GameObject nearest = mines[0];
+            Mine nearest = mines[0];
             float distance = (pos - nearest.transform.position).sqrMagnitude;
 
-            foreach (GameObject go in mines)
+            foreach (Mine go in mines)
             {
                 float newDist = (go.transform.position - pos).sqrMagnitude;
                 if (newDist < distance)
@@ -67,16 +72,16 @@ namespace TanksProject.Game.Entity.MinesController
         #endregion
 
         #region PRIVATE_METHODS
-        private Vector3 GetRandomPos()
+        private Vector2Int GetRandomTile()
         {
-            Vector3 pos = grid.GetTilePos(new Vector2Int(Random.Range(1, grid.Width - 1), Random.Range(1, grid.Height - 1)));
+            Vector2Int tile = new Vector2Int(Random.Range(1, grid.Width - 1), Random.Range(1, grid.Height - 1));
 
-            while (mines.Find(m => m.transform.position == pos) != null)
+            while (mines.Find(m => m.Tile == tile) != null)
             {
-                pos = grid.GetTilePos(new Vector2Int(Random.Range(1, grid.Width - 1), Random.Range(1, grid.Height - 1)));
+                tile = new Vector2Int(Random.Range(1, grid.Width - 1), Random.Range(1, grid.Height - 1));
             }
             
-            return pos;
+            return tile;
         }
         #endregion
     }

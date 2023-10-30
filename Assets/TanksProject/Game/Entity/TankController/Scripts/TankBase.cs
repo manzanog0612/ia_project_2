@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using TanksProject.Game.Entity.MineController;
+using UnityEngine;
 
 namespace TanksProject.Game.Entity.TankController
 {
@@ -13,7 +14,7 @@ namespace TanksProject.Game.Entity.TankController
         #region PROTECTED_FIELDS
         protected Genome genome;
         protected NeuralNetwork brain;
-        protected GameObject nearMine;
+        protected Mine nearMine;
         protected GameObject nearTank;
         protected Common.Grid.Grid grid;
         protected float[] inputs;
@@ -43,7 +44,7 @@ namespace TanksProject.Game.Entity.TankController
             OnReset();
         }
 
-        public void SetNearestMine(GameObject mine)
+        public void SetNearestMine(Mine mine)
         {
             nearMine = mine;
         }
@@ -76,11 +77,6 @@ namespace TanksProject.Game.Entity.TankController
             }
 
             OnThink(dt);
-
-            if (IsCloseToMine(nearMine))
-            {
-                OnTakeMine(nearMine);
-            }
         }
         #endregion
 
@@ -90,17 +86,17 @@ namespace TanksProject.Game.Entity.TankController
             return (obj.transform.position - transform.position).normalized;
         }
 
-        protected float GetDistToObject(GameObject obj)
+        protected Vector2Int GetDistToObject(Vector2Int targetTile)
         {
-            return Vector3.Distance(obj.transform.position, transform.position);
+            return new Vector2Int(targetTile.x - currentTile.x, targetTile.y - currentTile.y);
         }
 
-        protected bool IsCloseToMine(GameObject mine)
+        protected Vector2Int GetAbsDistToObject(Vector2Int targetTile)
         {
-            return (this.transform.position - nearMine.transform.position).sqrMagnitude <= 2.0f;
+            return new Vector2Int(Mathf.Abs(targetTile.x - currentTile.x), Mathf.Abs(targetTile.y - currentTile.y));
         }
 
-        protected void SetMovement(Vector2Int movement, float dt)
+        protected void SetMovement(Vector2Int movement)
         {
             currentTile += movement;
 

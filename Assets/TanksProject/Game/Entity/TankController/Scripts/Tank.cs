@@ -3,6 +3,7 @@
 using UnityEngine;
 
 using TanksProject.Game.Data;
+using TanksProject.Game.Entity.MineController;
 
 namespace TanksProject.Game.Entity.TankController
 {
@@ -18,15 +19,18 @@ namespace TanksProject.Game.Entity.TankController
 
         protected override void OnThink(float dt)
         {
-            Vector3 dirToMine = GetDirToObject(nearMine);
-            Vector3 dirCloserTank = GetDirToObject(nearTank);
+            //Vector3 dirToMine = GetDirToObject(nearMine.gameObject);
 
-            float distanceToGoodMine = GetDistToObject(nearMine);
+            Vector2Int distToMine = GetDistToObject(nearMine.Tile);
 
             List<float> inputs = new List<float>
             {
-                dirToMine.x,
-                dirToMine.z,
+                //dirToMine.x,
+                //dirToMine.z,
+                currentTile.x / (float)grid.Width,
+                currentTile.y / (float)grid.Height,
+                distToMine.x / (float)grid.Width * 2,
+                distToMine.y / (float)grid.Height * 2
                //transform.forward.x,
                //transform.forward.z,
                //dirCloserTank.x,
@@ -37,96 +41,34 @@ namespace TanksProject.Game.Entity.TankController
 
             float[] output = brain.Synapsis(inputs.ToArray());
 
-            switch (GameData.Inst.TestIndex)
-            {
-                case 0:
-                    RewardIfCloseToGoodMine(distanceToGoodMine);
-                    break;
-                case 1:
-                   // RewardIfCloserToGoodMineThanBadMine(distanceToBadMine, distanceToGoodMine);
-                    break;
-                case 2:
-                    //RewardIfCloserToGoodMineThanBadMine(distanceToBadMine, distanceToGoodMine);
-                    //PunishIfCloseToBadMine(distanceToBadMine);
-                    break;
-                case 3:
-                    //RewardIfCloserToGoodMineThanBadMine(distanceToBadMine, distanceToGoodMine);
-                    //PunishIfCloseToBadMine(distanceToBadMine);
-                    //PunishIfCollidingWithTanks();
-                    break;
-                default:
-                    //RewardIfCloserToGoodMineThanBadMine(distanceToBadMine, distanceToGoodMine);
-                    //PunishIfCloseToBadMine(distanceToBadMine);
-                    //PunishIfCollidingWithTanks();
-                    //PunishIfCollidingWithAnyObstacle();
-                    break;
-            }
+            SetMovement(TraduceMovement(output[0]));
 
-            SetMovement(TraduceMovement(output[0]), dt);
+            RewardIfCloseToMine();
+
+            if (currentTile == nearMine.Tile)
+            {
+                OnTakeMine(nearMine.gameObject);
+            }
         }
 
         protected override void OnTakeMine(GameObject mine)
         {
-            //switch (GameData.Inst.TestIndex)
-            //{
-            //    case 0:
-            //        if (IsGoodMine(mine))
-            //        {
-            //            SetFitness((fitness + 100) * 2);
-            //        }
-            //        break;
-            //    default:
-            //        if (IsGoodMine(mine))
-            //        {
-            //            SetFitness((fitness + 100) * 2);
-            //        }
-            //        else
-            //        {
-            //            SetFitness(fitness - 300);
-            //        }
-            //        break;
-            //}
+            switch (GameData.Inst.TestIndex)
+            {
+                default:
+                    SetFitness((fitness + 100) * 2);
+                break;
+            }
         }
 
         #region PRIVATE_METHODS
-        private void RewardIfCloseToGoodMine(float distanceToGoodMine)
+        private void RewardIfCloseToMine()
         {
-            if (distanceToGoodMine < 3)
+            Vector2Int absDistToMine = GetAbsDistToObject(nearMine.Tile);
+            if (absDistToMine.x < 3 && absDistToMine.y < 3)
             {
-                SetFitness(fitness + 5f);
+                SetFitness(fitness + 100);
             }
-        }
-
-        private void PunishIfCloseToBadMine(float distanceToBadMine)
-        {
-            if (distanceToBadMine < 3)
-            {
-                SetFitness(fitness - 5f);
-            }
-        }
-
-        private void RewardIfCloserToGoodMineThanBadMine(float distanceToBadMine, float distanceToGoodMine)
-        {
-            if (distanceToBadMine > distanceToGoodMine)
-            {
-                RewardIfCloseToGoodMine(distanceToGoodMine);
-            }
-        }
-
-        private void PunishIfCollidingWithTanks()
-        {
-            if (IsCollidingWithObstacle(nearTank))
-            {
-                SetFitness(fitness - 5f);
-            }
-        }
-
-        private void PunishIfCollidingWithAnyObstacle()
-        {
-            //if (IsCollidingWithObstacle(nearObstacle))
-            //{
-            //    SetFitness(fitness - 5f);
-            //}
         }
 
         private Vector2Int TraduceMovement(float movement)

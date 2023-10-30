@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 using UnityEngine;
 
+using TanksProject.Game.Entity.MineController;
 using TanksProject.Game.Entity.TankController;
 using TanksProject.Game.Data;
 
@@ -35,7 +36,7 @@ namespace TanksProject.Game.Entity.PopulationController
         #endregion
 
         #region ACTIONS
-        private Func<Vector3, GameObject> onGetNearestMine = null;
+        private Func<Vector3, Mine> onGetNearestMine = null;
         #endregion
 
         #region PROPERTIES
@@ -66,7 +67,7 @@ namespace TanksProject.Game.Entity.PopulationController
                 {
                     Tank t = tanks[i];
 
-                    GameObject mine = onGetNearestMine.Invoke(t.transform.position);
+                    Mine mine = onGetNearestMine.Invoke(t.transform.position);
                     t.SetNearestMine(mine);
 
                     GameObject nearestTank = GetNearestTank(t.gameObject);
@@ -79,7 +80,7 @@ namespace TanksProject.Game.Entity.PopulationController
         #endregion
 
         #region PUBLIC_METHODS
-        public void Init(Vector2Int[] tankStartTiles, Grid grid, Func<Vector3, GameObject> onGetNearestMine)
+        public void Init(Vector2Int[] tankStartTiles, Grid grid, Func<Vector3, Mine> onGetNearestMine)
         {
             this.tankStartTiles = tankStartTiles;
             this.grid = grid;
