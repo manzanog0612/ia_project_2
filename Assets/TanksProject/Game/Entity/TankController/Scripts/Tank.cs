@@ -17,7 +17,7 @@ namespace TanksProject.Game.Entity.TankController
             fitness = 1;
         }
 
-        protected override void OnThink(float dt)
+        protected override void OnThink()
         {
             //Vector3 dirToMine = GetDirToObject(nearMine.gameObject);
 
@@ -29,8 +29,10 @@ namespace TanksProject.Game.Entity.TankController
                 //dirToMine.z,
                 currentTile.x / (float)grid.Width,
                 currentTile.y / (float)grid.Height,
-                distToMine.x / (float)grid.Width * 2,
-                distToMine.y / (float)grid.Height * 2
+                nearMine.Tile.x / (float)grid.Width,
+                nearMine.Tile.y / (float)grid.Height,
+                distToMine.x / 10f,
+                distToMine.y / 10f,                
                //transform.forward.x,
                //transform.forward.z,
                //dirCloserTank.x,

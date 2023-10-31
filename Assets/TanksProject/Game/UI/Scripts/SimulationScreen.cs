@@ -36,7 +36,7 @@ namespace TanksProject.Game.UI
             timerSlider.onValueChanged.AddListener(OnTurnDurationChangeChange);
             timerText = timerTxt.text;
 
-            timerTxt.text = string.Format(timerText, GameData.Inst.TurnDuration * 100);
+            timerTxt.text = string.Format(timerText, GameData.Inst.TurnDuration * 1000);
 
             pauseBtn.onClick.AddListener(OnPauseButtonClick);
             stopBtn.onClick.AddListener(OnStopButtonClick);
@@ -56,8 +56,8 @@ namespace TanksProject.Game.UI
         #region PRIVATE_FIELDS
         private void OnTurnDurationChangeChange(float value)
         {
-            GameData.Inst.TurnDuration = value / 100f;
-            timerTxt.text = string.Format(timerText, (int)(GameData.Inst.TurnDuration * 100));
+            GameData.Inst.TurnDuration = value / 1000f;
+            timerTxt.text = string.Format(timerText, (int)(GameData.Inst.TurnDuration * 1000));
         }
 
         private void OnPauseButtonClick()

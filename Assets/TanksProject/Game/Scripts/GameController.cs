@@ -9,7 +9,6 @@ using TanksProject.Game.Data;
 using TanksProject.Game.UI;
 
 using data;
-using Palmmedia.ReportGenerator.Core;
 
 namespace TanksProject.Game
 {
@@ -44,6 +43,15 @@ namespace TanksProject.Game
             }
 
             GameData.Inst.UpdateTime(Time.fixedDeltaTime);
+
+            if (GameData.Inst.GenerationFinished)
+            {
+                Epoch();
+            }
+            else if (GameData.Inst.TurnFinished)
+            {
+                ChangeTurn();
+            }
         }
         #endregion
 
@@ -147,12 +155,25 @@ namespace TanksProject.Game
 
         private void PauseSimulation()
         {
+            simulationOn = false;
+        }
+
+        private void Epoch()
+        {
             for (int i = 0; i < Enum.GetValues(typeof(TEAM)).Length; i++)
             {
-                populationManagers[(TEAM)i].PauseSimulation();
+                populationManagers[(TEAM)i].Epoch();
             }
 
-            simulationOn = false;
+            minesManager.CreateMines();
+        }
+
+        private void ChangeTurn()
+        {
+            for (int i = 0; i < Enum.GetValues(typeof(TEAM)).Length; i++)
+            {
+                populationManagers[(TEAM)i].ChangeTurn();
+            }
         }
         #endregion
     }

@@ -29,8 +29,6 @@ namespace TanksProject.Game.Entity.PopulationController
         private List<Genome> population = new List<Genome>();
         private List<NeuralNetwork> brains = new List<NeuralNetwork>();
 
-        private bool isRunning = false;
-
         private Grid grid = null;
         private Vector2Int[] tankStartTiles = null;
         #endregion
@@ -47,38 +45,6 @@ namespace TanksProject.Game.Entity.PopulationController
         public TEAM Team { get => team; }
         #endregion
 
-        #region UNITY_CALLS
-        private void FixedUpdate()
-        {
-            if (!isRunning)
-            { 
-                return; 
-            }
-
-            float dt = Time.fixedDeltaTime;
-
-            if (GameData.Inst.GenerationFinished)
-            {
-                Epoch();
-            }
-            else if (GameData.Inst.TurnFinished)
-            {
-                for (int i = 0; i < tanks.Count; i++)
-                {
-                    Tank t = tanks[i];
-
-                    Mine mine = onGetNearestMine.Invoke(t.transform.position);
-                    t.SetNearestMine(mine);
-
-                    GameObject nearestTank = GetNearestTank(t.gameObject);
-                    t.SetNearestTank(nearestTank);
-
-                    t.Think(dt);
-                }
-            }
-        }
-        #endregion
-
         #region PUBLIC_METHODS
         public void Init(Vector2Int[] tankStartTiles, Grid grid, Func<Vector3, Mine> onGetNearestMine)
         {
@@ -93,8 +59,6 @@ namespace TanksProject.Game.Entity.PopulationController
             genAlg = new GeneticAlgorithm(sim.config.elites_count, sim.config.mutation_chance, sim.config.mutation_rate);
 
             LoadInitialPopulation(sim);
-
-            isRunning = true;
         }
 
         public void StartSimulation()
@@ -102,19 +66,10 @@ namespace TanksProject.Game.Entity.PopulationController
             genAlg = new GeneticAlgorithm(GameData.Inst.EliteCount, GameData.Inst.MutationChance, GameData.Inst.MutationRate);
 
             GenerateInitialPopulation();
-
-            isRunning = true;
-        }
-
-        public void PauseSimulation()
-        {
-            isRunning = !isRunning;
         }
 
         public void StopSimulation()
         {
-            isRunning = false;
-
             Generation = 0;
 
             DestroyTanks();
@@ -134,7 +89,63 @@ namespace TanksProject.Game.Entity.PopulationController
             }
 
             return teamData;
-        }        
+        }
+
+        // Evolve!!!
+        public void Epoch()
+        {
+            // Increment generation counter
+            Generation++;
+
+            // Calculate best, average and worst fitness
+            BestFitness = GetBestFitness();
+            AvgFitness = GetAvgFitness();
+            WorstFitness = GetWorstFitness();
+
+            // Evolve each genome and create a new array of genomes
+            Genome[] newGenomes = genAlg.Epoch(population.ToArray());
+
+            // Clear current population
+            population.Clear();
+
+            // Add new population
+            population.AddRange(newGenomes);
+
+            // Set the new genomes as each NeuralNetwork weights
+            for (int i = 0; i < GameData.Inst.PopulationCount; i++)
+            {
+                NeuralNetwork brain = brains[i];
+
+                brain.SetWeights(newGenomes[i].genome);
+
+                tanks[i].SetBrain(newGenomes[i], brain);
+                tanks[i].SetCurrentTile(tankStartTiles[i]);
+                tanks[i].transform.rotation = Quaternion.identity;
+            }
+
+            if (Generation > 1 &&
+                GameData.Inst.FitnessTillNewTest.Length > GameData.Inst.TestIndex &&
+                AvgFitness > GameData.Inst.FitnessTillNewTest[GameData.Inst.TestIndex])
+            {
+                GameData.Inst.TestIndex++;
+            }
+        }
+
+        public void ChangeTurn()
+        {
+            for (int i = 0; i < tanks.Count; i++)
+            {
+                Tank t = tanks[i];
+
+                Mine mine = onGetNearestMine.Invoke(t.transform.position);
+                t.SetNearestMine(mine);
+
+                GameObject nearestTank = GetNearestTank(t.gameObject);
+                t.SetNearestTank(nearestTank);
+
+                t.Think();
+            }
+        }
         #endregion
 
         #region PRIVATE_METHODS
@@ -242,46 +253,6 @@ namespace TanksProject.Game.Entity.PopulationController
             brain.AddNeuronLayer(GameData.Inst.OutputsCount, GameData.Inst.Bias, GameData.Inst.P);
 
             return brain;
-        }
-
-        // Evolve!!!
-        private void Epoch()
-        {
-            // Increment generation counter
-            Generation++;
-
-            // Calculate best, average and worst fitness
-            BestFitness = GetBestFitness();
-            AvgFitness = GetAvgFitness();
-            WorstFitness = GetWorstFitness();
-
-            // Evolve each genome and create a new array of genomes
-            Genome[] newGenomes = genAlg.Epoch(population.ToArray());
-
-            // Clear current population
-            population.Clear();
-
-            // Add new population
-            population.AddRange(newGenomes);
-
-            // Set the new genomes as each NeuralNetwork weights
-            for (int i = 0; i < GameData.Inst.PopulationCount; i++)
-            {
-                NeuralNetwork brain = brains[i];
-
-                brain.SetWeights(newGenomes[i].genome);
-
-                tanks[i].SetBrain(newGenomes[i], brain);
-                tanks[i].SetCurrentTile(tankStartTiles[i]);
-                tanks[i].transform.rotation = Quaternion.identity;
-            }
-
-            if (Generation > 1 && 
-                GameData.Inst.FitnessTillNewTest.Length > GameData.Inst.TestIndex && 
-                AvgFitness > GameData.Inst.FitnessTillNewTest[GameData.Inst.TestIndex])
-            {
-                GameData.Inst.TestIndex++;
-            }
         }
         #endregion
 

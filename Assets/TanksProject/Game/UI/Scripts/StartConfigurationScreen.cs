@@ -82,7 +82,7 @@ namespace TanksProject.Game.UI
 
             populationCountSlider.value = GameData.Inst.PopulationCount;
             turnsPerGenerationSlider.value = GameData.Inst.TurnsPerGeneration;
-            turnDurationSlider.value = GameData.Inst.TurnDuration * 100.0f;
+            turnDurationSlider.value = GameData.Inst.TurnDuration * 1000.0f;
             eliteCountSlider.value = GameData.Inst.EliteCount;
             mutationChanceSlider.value = GameData.Inst.MutationChance * 100.0f;
             mutationRateSlider.value = GameData.Inst.MutationRate * 100.0f;
@@ -148,9 +148,9 @@ namespace TanksProject.Game.UI
         }
         private void OnTurnDurationChange(float value)
         {
-            GameData.Inst.TurnDuration = value / 100.0f;
+            GameData.Inst.TurnDuration = value / 1000.0f;
 
-            turnDurationTxt.text = string.Format(turnDurationText, (int)(GameData.Inst.TurnDuration * 100));
+            turnDurationTxt.text = string.Format(turnDurationText, (int)(GameData.Inst.TurnDuration * 1000));
         }
         private void OnEliteCountChange(float value)
         {

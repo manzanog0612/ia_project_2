@@ -69,14 +69,14 @@ namespace TanksProject.Game.Entity.TankController
             return (transform.position - obj.transform.position).sqrMagnitude <= 2.0f;
         }
 
-        public void Think(float dt)
+        public void Think()
         {
             if (dead)
             {
                 return;
             }
 
-            OnThink(dt);
+            OnThink();
         }
         #endregion
 
@@ -121,7 +121,7 @@ namespace TanksProject.Game.Entity.TankController
             transform.position = grid.GetTilePos(currentTile);
         }
 
-        protected virtual void OnThink(float dt)
+        protected virtual void OnThink()
         {
 
         }
