@@ -1,33 +1,54 @@
-﻿using TanksProject.Game.Entity.MineController;
-using UnityEngine;
+﻿using UnityEngine;
+
+using TanksProject.Game.Entity.MineController;
+using System;
 
 namespace TanksProject.Game.Entity.TankController
 {
+    public enum STATE { DIE, SURVIVE, REPRODUCE }
+
     public class TankBase : MonoBehaviour
     {
         #region EXPOSED_FIELDS
         [SerializeField] protected float Speed = 10.0f;
         [SerializeField] protected float RotSpeed = 15.0f;
-        [SerializeField] protected bool dead = false;
         #endregion
 
         #region PROTECTED_FIELDS
         protected Genome genome;
         protected NeuralNetwork brain;
         protected Mine nearMine;
-        protected GameObject nearTank;
+        protected Tank nearEnemyTank;
+        protected Tank nearTeamTank;
         protected Common.Grid.Grid grid;
         protected float[] inputs;
         protected Vector2Int currentTile = Vector2Int.zero;
+        protected Vector2Int fromTile = Vector2Int.zero;
         protected float turnDuration = 1f;
+        protected STATE state = STATE.SURVIVE;
+        protected int turnsAlive = 0;
+        #endregion
+
+        #region PROPERTIES
+        public Vector2Int Tile { get => currentTile; }
+        public STATE State { get => state; }
+        public int TurnsAlive { get => turnsAlive; }
+        public Genome Genome { get => genome; }
+        public NeuralNetwork Brain { get => brain; set => brain = value; }
+        #endregion
+
+        #region ACTIONS
+        private Action<GameObject> onTakeMine = null;
         #endregion
 
         #region PUBLIC_METHODS
-        public void Init(Common.Grid.Grid grid, Vector2Int currentTile, float turnDuration)
+        public void Init(Common.Grid.Grid grid, Vector2Int currentTile, float turnDuration, Action<GameObject> onTakeMine)
         {
             this.grid = grid;
             this.currentTile = currentTile;
+            fromTile = currentTile;
             this.turnDuration = turnDuration;
+            this.onTakeMine = onTakeMine;
         }
 
         public void SetCurrentTile(Vector2Int currentTile)
@@ -49,43 +70,43 @@ namespace TanksProject.Game.Entity.TankController
             nearMine = mine;
         }
 
-        public void SetNearestTank(GameObject tank)
+        public void SetNearestEnemyTank(Tank tank)
         {
-            nearTank = tank;
+            nearEnemyTank = tank;
+        }
+
+        public void SetNearestTeamTank(Tank tank)
+        {
+            nearTeamTank = tank;
         }
 
         public bool IsDead()
         {
-            return dead;
+            return state == STATE.DIE;
         }
 
-        public void SetDead(bool dead)
+        public void SetState(STATE state)
         {
-            this.dead = dead;
-        }
-
-        public bool IsCollidingWithObstacle(GameObject obj)
-        {
-            return (transform.position - obj.transform.position).sqrMagnitude <= 2.0f;
+            this.state = state;
         }
 
         public void Think()
         {
-            if (dead)
+            if (IsDead())
             {
                 return;
             }
 
             OnThink();
         }
+
+        public void TakeMine()
+        {
+            OnTakeMine(nearMine.gameObject);
+        }
         #endregion
 
         #region PROTECTED_METHODS
-        protected Vector3 GetDirToObject(GameObject obj)
-        {
-            return (obj.transform.position - transform.position).normalized;
-        }
-
         protected Vector2Int GetDistToObject(Vector2Int targetTile)
         {
             return new Vector2Int(targetTile.x - currentTile.x, targetTile.y - currentTile.y);
@@ -96,10 +117,49 @@ namespace TanksProject.Game.Entity.TankController
             return new Vector2Int(Mathf.Abs(targetTile.x - currentTile.x), Mathf.Abs(targetTile.y - currentTile.y));
         }
 
+        protected Vector2Int GetLastAbsDistToObject(Vector2Int targetTile)
+        {
+            return new Vector2Int(Mathf.Abs(targetTile.x - fromTile.x), Mathf.Abs(targetTile.y - fromTile.y));
+        }
+
         protected void SetMovement(Vector2Int movement)
         {
+            if (movement != Vector2Int.zero)
+            {
+                fromTile = currentTile;
+            }
+
             currentTile += movement;
 
+            Move();
+        }
+
+        protected void RunAway()
+        {
+            currentTile = fromTile;
+
+            Move();
+        }
+
+        protected virtual void OnThink()
+        {
+            turnsAlive++;
+        }
+
+        protected virtual void OnTakeMine(GameObject mine)
+        {
+            onTakeMine.Invoke(mine);
+        }
+
+        protected virtual void OnReset()
+        {
+            state = STATE.SURVIVE;
+        }
+        #endregion
+
+        #region PRIVATE_METHODS
+        private void Move()
+        {
             if (currentTile.x == grid.Width)
             {
                 currentTile.x = 0;
@@ -119,19 +179,6 @@ namespace TanksProject.Game.Entity.TankController
             }
 
             transform.position = grid.GetTilePos(currentTile);
-        }
-
-        protected virtual void OnThink()
-        {
-
-        }
-
-        protected virtual void OnTakeMine(GameObject mine)
-        {
-        }
-
-        protected virtual void OnReset()
-        {
         }
         #endregion
     }

@@ -1,26 +1,28 @@
 using UnityEngine;
 
-namespace Utilities
+namespace TanksProject.Common.Saving
 {
     public class SaveLoadSystem
     {
-        public static void SaveConfig(data.SimData data, string name = "")
+        #region PUBLIC_METHODS
+        public static void SaveConfig(SimData data, string name = "")
         {
             JsonReadWriteSystem.SaveToJson(data, name);
         }
 
-        public static data.SimData LoadSimFile()
+        public static SimData LoadSimFile()
         {
             string file = FileExplorer.SelectFile();
 
-            if (file == null) 
-            { 
-                Debug.Log("No file select"); 
-                return null; 
+            if (file == null)
+            {
+                Debug.Log("No file select");
+                return null;
             }
 
-            JsonReadWriteSystem.LoadFromJson(out data.SimData config, file);
+            JsonReadWriteSystem.LoadFromJson(out SimData config, file);
             return config;
         }
+        #endregion
     }
 }

@@ -35,13 +35,11 @@ public class GeneticAlgorithm
 
 	float totalFitness;
 
-	int eliteCount = 0;
 	float mutationChance = 0.0f;
 	float mutationRate = 0.0f;
 
-	public GeneticAlgorithm(int eliteCount, float mutationChance, float mutationRate)
+	public GeneticAlgorithm(float mutationChance, float mutationRate)
 	{
-		this.eliteCount = eliteCount;
 		this.mutationChance = mutationChance;
 		this.mutationRate = mutationRate;
 	}
@@ -59,14 +57,14 @@ public class GeneticAlgorithm
     }
 
 
-	public Genome[] Epoch(Genome[] oldGenomes)
+	public Genome[] Epoch(Genome[] reproducible, Genome[] elites)
 	{
 		totalFitness = 0;
 
 		population.Clear();
 		newPopulation.Clear();
 
-		population.AddRange(oldGenomes);
+		population.AddRange(reproducible);
 		population.Sort(HandleComparison);
 
 		foreach (Genome g in population)
@@ -74,25 +72,68 @@ public class GeneticAlgorithm
 			totalFitness += g.fitness;
 		}
 
-		SelectElite();
+        newPopulation.AddRange(elites);
 
-		while (newPopulation.Count < population.Count)
+		for (int i = 0; i < population.Count; i += 2)
 		{
-			Crossover();
-		}
+            Crossover(i < population.Count - 1 || reproducible.Length % 2 == 0);
+        }
 
 		return newPopulation.ToArray();
 	}
 
-	void SelectElite()
-	{
-		for (int i = 0; i < eliteCount && newPopulation.Count < population.Count; i++)
+    public Genome[] Epoch(Genome[] oldGenomes)
+    {
+        totalFitness = 0;
+
+        population.Clear();
+        newPopulation.Clear();
+
+        population.AddRange(oldGenomes);
+        population.Sort(HandleComparison);
+
+        foreach (Genome g in population)
+        {
+            totalFitness += g.fitness;
+        }
+
+        for (int i = 0; i < 4 && newPopulation.Count < population.Count; i++)
 		{
 			newPopulation.Add(population[i]);
 		}
-	}
 
-	void Crossover()
+        while (newPopulation.Count < population.Count)
+        {
+            Crossover(true);
+        }
+
+        return newPopulation.ToArray();
+    }
+
+    public Genome[] GetRandomCrossoverPopulation(Genome[] allGenomes)
+	{
+		Genome[] newPopulation = new Genome[allGenomes.Length];
+
+        for (int i = 0; i < allGenomes.Length; i += 2)
+		{
+            Genome mom = RandomSelection(allGenomes);
+            Genome dad = RandomSelection(allGenomes);
+
+            Crossover(mom, dad, out Genome child1, out Genome child2);
+
+			newPopulation[i] = child1;
+
+			if (allGenomes.Length > i + 1)
+			{ 
+				newPopulation[i + 1] = child2; 
+			}
+        }
+
+		return newPopulation;
+
+    }
+
+	void Crossover(bool bothChildren)
 	{
 		Genome mom = RouletteSelection();
 		Genome dad = RouletteSelection();
@@ -103,7 +144,11 @@ public class GeneticAlgorithm
 		Crossover(mom, dad, out child1, out child2);
 
 		newPopulation.Add(child1);
-		newPopulation.Add(child2);
+
+		if (bothChildren)
+		{ 
+			newPopulation.Add(child2); 
+		}
 	}
 
 	void Crossover(Genome mom, Genome dad, out Genome child1, out Genome child2)
@@ -170,4 +215,9 @@ public class GeneticAlgorithm
 		return null;
 	}
 
+    public Genome RandomSelection(Genome[] genomesToChoose)
+    {
+        int rndIndex = Random.Range(0, genomesToChoose.Length);
+        return genomesToChoose[rndIndex];
+    }
 }

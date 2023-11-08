@@ -31,12 +31,20 @@ namespace TanksProject.Game.UI
         #endregion
 
         #region UNITY_CALLS
+        private void OnEnable()
+        {            
+            if (timerText == null)
+            {
+                timerText = timerTxt.text;
+            }
+
+            timerTxt.text = string.Format(timerText, GameData.Inst.TurnDuration * 1000f);
+            timerSlider.value = GameData.Inst.TurnDuration * 1000.0f;
+        }
+
         private void Start()
         {
             timerSlider.onValueChanged.AddListener(OnTurnDurationChangeChange);
-            timerText = timerTxt.text;
-
-            timerTxt.text = string.Format(timerText, GameData.Inst.TurnDuration * 1000);
 
             pauseBtn.onClick.AddListener(OnPauseButtonClick);
             stopBtn.onClick.AddListener(OnStopButtonClick);

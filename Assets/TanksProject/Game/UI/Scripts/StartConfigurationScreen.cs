@@ -4,8 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 using TanksProject.Game.Data;
-
-using data;
+using TanksProject.Common.Saving;
 
 namespace TanksProject.Game.UI
 {
@@ -19,7 +18,6 @@ namespace TanksProject.Game.UI
         [SerializeField] private Text turnDurationTxt;
         [SerializeField] private Slider turnDurationSlider;
         [SerializeField] private Text eliteCountTxt;
-        [SerializeField] private Slider eliteCountSlider;
         [SerializeField] private Text mutationChanceTxt;
         [SerializeField] private Slider mutationChanceSlider;
         [SerializeField] private Text mutationRateTxt;
@@ -41,7 +39,6 @@ namespace TanksProject.Game.UI
         private string populationText;
         private string turnsPerGenerationText;
         private string turnDurationText;
-        private string elitesText;
         private string mutationChanceText;
         private string mutationRateText;
         private string hiddenLayersCountText;
@@ -61,7 +58,6 @@ namespace TanksProject.Game.UI
             populationCountSlider.onValueChanged.AddListener(OnPopulationCountChange);
             turnsPerGenerationSlider.onValueChanged.AddListener(OnTurnsPerGenerationChange);
             turnDurationSlider.onValueChanged.AddListener(OnTurnDurationChange);
-            eliteCountSlider.onValueChanged.AddListener(OnEliteCountChange);
             mutationChanceSlider.onValueChanged.AddListener(OnMutationChanceChange);
             mutationRateSlider.onValueChanged.AddListener(OnMutationRateChange);
             hiddenLayersCountSlider.onValueChanged.AddListener(OnHiddenLayersCountChange);
@@ -72,7 +68,6 @@ namespace TanksProject.Game.UI
             populationText = populationCountTxt.text;
             turnsPerGenerationText = turnsPerGenerationTxt.text;
             turnDurationText = turnDurationTxt.text;
-            elitesText = eliteCountTxt.text;
             mutationChanceText = mutationChanceTxt.text;
             mutationRateText = mutationRateTxt.text;
             hiddenLayersCountText = hiddenLayersCountTxt.text;
@@ -83,7 +78,6 @@ namespace TanksProject.Game.UI
             populationCountSlider.value = GameData.Inst.PopulationCount;
             turnsPerGenerationSlider.value = GameData.Inst.TurnsPerGeneration;
             turnDurationSlider.value = GameData.Inst.TurnDuration * 1000.0f;
-            eliteCountSlider.value = GameData.Inst.EliteCount;
             mutationChanceSlider.value = GameData.Inst.MutationChance * 100.0f;
             mutationRateSlider.value = GameData.Inst.MutationRate * 100.0f;
             hiddenLayersCountSlider.value = GameData.Inst.HiddenLayers;
@@ -107,7 +101,7 @@ namespace TanksProject.Game.UI
         #region PRIVATE_FIELDS
         private void OnLoadSim()
         {
-            SimData sim = Utilities.SaveLoadSystem.LoadSimFile();
+            SimData sim = SaveLoadSystem.LoadSimFile();
 
             ConfigurationData config = sim.config;
 
@@ -118,8 +112,7 @@ namespace TanksProject.Game.UI
 
             populationCountSlider.onValueChanged.Invoke(config.population_count);
             turnsPerGenerationSlider.onValueChanged.Invoke(config.turnsPerGeneration);
-            turnDurationSlider.onValueChanged.Invoke(config.turnDuration * 100);
-            eliteCountSlider.onValueChanged.Invoke(config.elites_count);
+            turnDurationSlider.onValueChanged.Invoke(config.turnDuration * 1000.0f);
             mutationChanceSlider.onValueChanged.Invoke(config.mutation_chance * 100.0f);
             mutationRateSlider.onValueChanged.Invoke(config.mutation_rate * 100.0f);
             hiddenLayersCountSlider.onValueChanged.Invoke(config.hidden_layers_count);
@@ -150,13 +143,7 @@ namespace TanksProject.Game.UI
         {
             GameData.Inst.TurnDuration = value / 1000.0f;
 
-            turnDurationTxt.text = string.Format(turnDurationText, (int)(GameData.Inst.TurnDuration * 1000));
-        }
-        private void OnEliteCountChange(float value)
-        {
-            GameData.Inst.EliteCount = (int)value;
-
-            eliteCountTxt.text = string.Format(elitesText, GameData.Inst.EliteCount);
+            turnDurationTxt.text = string.Format(turnDurationText, (int)(GameData.Inst.TurnDuration * 1000f));
         }
 
         private void OnMutationChanceChange(float value)

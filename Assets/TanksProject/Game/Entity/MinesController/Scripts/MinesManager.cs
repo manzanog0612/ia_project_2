@@ -4,6 +4,7 @@ using UnityEngine;
 
 using TanksProject.Game.Data;
 using TanksProject.Game.Entity.MineController;
+using TanksProject.Game.Entity.PopulationController;
 
 namespace TanksProject.Game.Entity.MinesController
 {
@@ -23,6 +24,12 @@ namespace TanksProject.Game.Entity.MinesController
         public void Init(Common.Grid.Grid grid)
         {
             this.grid = grid;
+        }
+
+        public void OnTakeMine(GameObject mine)
+        {
+            mines.Remove(mine.GetComponent<Mine>());
+            Destroy(mine);
         }
 
         public void CreateMines()
@@ -74,13 +81,26 @@ namespace TanksProject.Game.Entity.MinesController
         #region PRIVATE_METHODS
         private Vector2Int GetRandomTile()
         {
-            Vector2Int tile = new Vector2Int(Random.Range(1, grid.Width - 1), Random.Range(1, grid.Height - 1));
+            Vector2Int tile = GetRandTile();
 
             while (mines.Find(m => m.Tile == tile) != null)
             {
-                tile = new Vector2Int(Random.Range(1, grid.Width - 1), Random.Range(1, grid.Height - 1));
+                tile = GetRandTile();
             }
-            
+
+            Vector2Int GetRandTile()
+            {
+                if (GameData.Inst.TestIndex < 3)
+                {
+                    return new Vector2Int(Random.Range(GameData.Inst.PopulationCount, grid.Width - GameData.Inst.PopulationCount - 1),
+                    Random.Range(1, grid.Height - 1));
+                }
+                else
+                {
+                    return new Vector2Int(Random.Range(1, grid.Width - 1), Random.Range(1, grid.Height - 1));
+                }
+            }
+
             return tile;
         }
         #endregion

@@ -30,7 +30,6 @@ namespace TanksProject.Game.Data
         [Header("Population")]
         public int PopulationCount = 0;
 
-        public int EliteCount = 0;
         public float MutationChance = 0;
         public float MutationRate = 0;
 
@@ -43,6 +42,7 @@ namespace TanksProject.Game.Data
         public float Bias = 0;
         public float P = 0;
 
+        public int MinGenerationToStartHungerGames = 0;
         public int TestIndex = 0;
         #endregion
 
@@ -56,7 +56,24 @@ namespace TanksProject.Game.Data
 
         #region PROPERTIES
         public float[] FitnessTillNewTest { get => fitnessTillNewTest; }
-        public int MinesCount { get => PopulationCount * 2; }
+        public int MinesCount 
+        { 
+            get
+            { 
+                if (TestIndex < 2)
+                {
+                    return PopulationCount * 4;
+                }
+                else if (TestIndex < 3)
+                {
+                    return PopulationCount * 3;
+                }
+                else
+                {
+                    return PopulationCount * 2;
+                }
+            } 
+        }
 
         public PopulationManager PM(TEAM team)
         {
