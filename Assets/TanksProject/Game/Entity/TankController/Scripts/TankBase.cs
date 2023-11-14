@@ -35,6 +35,8 @@ namespace TanksProject.Game.Entity.TankController
         public int TurnsAlive { get => turnsAlive; set => turnsAlive = value; }
         public Genome Genome { get => genome; }
         public NeuralNetwork Brain { get => brain; }
+        public Tank NearEnemyTank { get => nearEnemyTank; }
+        public Tank NearTeamTank { get => nearTeamTank; }
         #endregion
 
         #region ACTIONS

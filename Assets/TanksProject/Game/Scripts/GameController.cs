@@ -88,20 +88,7 @@ namespace TanksProject.Game
         #endregion
 
         #region PRIVATE_METHODS
-        private Vector2Int[] GetInitialPositions(TEAM team)
-        {
-            Vector2Int[] gridPos = new Vector2Int[grid.Width];
-
-            for (int i = 0; i < grid.Width; i++)
-            {
-                int x = team == TEAM.RED ? i : grid.Width - i - 1;
-                int y = team == TEAM.RED ? 0 : grid.Height - 1;
-                gridPos[i] = new Vector2Int(x, y);
-            }
-
-            return gridPos;
-        }
-
+        #region SIMULATION_MANAGEMENT
         private void SaveSimulation()
         {
             ConfigurationData config = new();
@@ -144,7 +131,6 @@ namespace TanksProject.Game
         {
             StartLoadedSimulation(JsonUtility.FromJson<SimData>(startGenerations.text));
         }
-
 
         private void StartLoadedSimulation(SimData simData)
         {
@@ -202,7 +188,7 @@ namespace TanksProject.Game
             {
                 TEAM team = (TEAM)i;
                 populationManagers[team].Epoch();
-                
+
                 if (populationManagers[team].Dead)
                 {
                     deadTeams.Add(team);
@@ -223,7 +209,8 @@ namespace TanksProject.Game
                 else
                 {
                     StopSimulation();
-                    StartDefaultSimulation();
+                    StartSimulation();
+                    //StartDefaultSimulation();
 
                     Debug.Log("Both teams dead");
                 }
@@ -241,32 +228,67 @@ namespace TanksProject.Game
                 populationManagers[(TEAM)i].ChangeTurn();
             }
 
-            //HandleEnemiesInSameTile();
+            for (int i = 0; i < teamsAmount; i++)
+            {
+                populationManagers[(TEAM)i].OnTurnUpdated();
+            }
+
+            HandleEnemiesInSameTile();
+
+            for (int i = 0; i < teamsAmount; i++)
+            {
+                populationManagers[(TEAM)i].TrackFitness();
+            }
         }
+        #endregion
 
         #region TURN_DYNAMICS
         private void HandleEnemiesInSameTile()
         {
             for (int i = 0; i < populationManagers[TEAM.RED].Tanks.Count; i++)
             {
-                for (int j = 0; j < populationManagers[TEAM.BLUE].Tanks.Count; j++)
+                Tank redTank = populationManagers[TEAM.RED].Tanks[i];
+                Tank blueTank = populationManagers[TEAM.RED].Tanks[i].NearEnemyTank;
+
+                if (redTank.Tile != blueTank.Tile)
                 {
-                    Tank redTank = populationManagers[TEAM.RED].Tanks[i];
-                    Tank blueTank = populationManagers[TEAM.BLUE].Tanks[j];
-        
-                    if (redTank.Tile == blueTank.Tile /*&& algo mas falta aca como preguntar si esa casilla tiene comida */)
+                    continue;
+                }
+
+                bool sameTileAsMine = minesManager.IsMineOnTile(redTank.Tile);
+                bool redTankRanAway = redTank.ChooseWhetherToFlee();
+                bool blueTankRanAway = blueTank.ChooseWhetherToFlee();
+
+                if (!redTankRanAway && !blueTankRanAway) // both stayed
+                {
+                    TEAM dyingTank = (TEAM)UnityEngine.Random.Range(0, teamsAmount);
+
+                    Tank loser = dyingTank == TEAM.RED ? redTank : blueTank;
+                    Tank winner = dyingTank == TEAM.RED ? blueTank : redTank;
+
+                    loser.SetState(STATE.DIE);
+
+                    if (sameTileAsMine)
                     {
-                        TEAM dyingTank = (TEAM)UnityEngine.Random.Range(0, teamsAmount);
-        
-                        if (dyingTank == TEAM.RED)
+                        winner.TakeMine();
+                    }
+                }
+                else if (redTankRanAway ^ blueTankRanAway) // one stayed, one fleed
+                {
+                    Tank tankWhomStayed = blueTankRanAway ? redTank : blueTank;
+                    Tank tankWhomFleed = blueTankRanAway ? blueTank : redTank;
+
+                    if (sameTileAsMine)
+                    {
+                        tankWhomStayed.TakeMine();
+                    }
+                    else
+                    {
+                        bool tankDies = UnityEngine.Random.Range(0, 100) < 75;
+
+                        if (tankDies)
                         {
-                            redTank.SetState(STATE.DIE);
-                            blueTank.TakeMine();
-                        }
-                        else
-                        {
-                            blueTank.SetState(STATE.DIE);
-                            redTank.TakeMine();
+                            tankWhomFleed.SetState(STATE.DIE);
                         }
                     }
                 }
@@ -280,10 +302,26 @@ namespace TanksProject.Game
                 populationManagers[(TEAM)i].SetStateByMinesEaten();
             }
         }
+        #endregion
 
+        #region AUX
         private TEAM GetContraryTeam(TEAM contraryTo)
         {
             return contraryTo == TEAM.BLUE ? TEAM.RED : TEAM.BLUE;
+        }
+
+        private Vector2Int[] GetInitialPositions(TEAM team)
+        {
+            Vector2Int[] gridPos = new Vector2Int[grid.Width];
+
+            for (int i = 0; i < grid.Width; i++)
+            {
+                int x = team == TEAM.RED ? i : grid.Width - i - 1;
+                int y = team == TEAM.RED ? 0 : grid.Height - 1;
+                gridPos[i] = new Vector2Int(x, y);
+            }
+
+            return gridPos;
         }
         #endregion
         #endregion

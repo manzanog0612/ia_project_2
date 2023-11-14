@@ -146,21 +146,32 @@ namespace TanksProject.Game.Entity.PopulationController
             return teamData;
         }
 
+        public void OnTurnUpdated()
+        {
+            for (int i = 0; i < tanks.Count; i++)
+            {
+                tanks[i].OnTurnUpdated();
+            }
+        }
+
+        public void TrackFitness()
+        {
+            for (int i = 0; i < tanks.Count; i++)
+            {
+                tanks[i].TrackFitness();
+            }
+        }
+
         public void Epoch()
         {
             Generation++;
 
             Genome[] newGenomes = null;
 
-            for (int i = 0; i < tanks.Count; i++)
-            {
-                tanks[i].OnTurnEnd();
-                //Debug.Log(tanks[i].Genome.fitness);
-            }
-
             if (!GameData.Inst.learning)
             {
-                List<Genome> elites = new List<Genome>();
+                //List<Genome> elites = new List<Genome>();
+                int elites = 0;
                 List<Genome> reproducible = new List<Genome>();
                 for (int i = 0; i < tanks.Count; i++)
                 {
@@ -170,7 +181,6 @@ namespace TanksProject.Game.Entity.PopulationController
                         if (tank.State == STATE.REPRODUCE)
                         {
                             reproducible.Add(tank.Genome);
-                            //brains.Add(CreateBrain());
                         }
 
                         if (tank.TurnsAlive == 3)
@@ -179,7 +189,7 @@ namespace TanksProject.Game.Entity.PopulationController
                         }
                         else
                         {
-                            elites.Add(tank.Genome);
+                            elites++;
                             tank.TurnsAlive++;
                         }
                     }
@@ -193,14 +203,16 @@ namespace TanksProject.Game.Entity.PopulationController
                     }
                 }
 
-                if (elites.Count < 2)
+                if (elites <= 1)
                 {
                     Dead = true;
                     return;
                 }
 
-                // Evolve each genome and create a new array of genomes
-                newGenomes = genAlg.Epoch(reproducible.ToArray());
+                if (reproducible.Count >= 2)
+                {
+                    newGenomes = genAlg.Epoch(reproducible.ToArray());
+                }
             }
             else
             {

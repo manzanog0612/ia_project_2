@@ -81,6 +81,18 @@ namespace TanksProject.Game.Entity.MinesController
             return nearest;
         }
 
+        public bool IsMineOnTile(Vector2Int tile)
+        {
+            for (int i = 0; i < mines.Count; i++)
+            {
+                if (mines[i].Tile == tile)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
         #endregion
 
         #region PRIVATE_METHODS

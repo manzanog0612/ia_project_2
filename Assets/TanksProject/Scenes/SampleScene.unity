@@ -3945,24 +3945,22 @@ MonoBehaviour:
   MutationRate: 0.29
   TurnsPerGeneration: 300
   TurnDuration: 0.01
-  InputsCount: 8
-  HiddenLayers: 7
-  OutputsCount: 1
-  NeuronsCountPerHL: 15
+  InputsCount: 18
+  HiddenLayers: 10
+  OutputsCount: 4
+  NeuronsCountPerHL: 30
   Bias: -1
   P: 0.5
   learning: 1
-  minesOnCenter: 0
-  TestIndex: 5
+  minesOnCenter: 1
+  TestIndex: 2
   fitnessTillNewTest:
-  - 500
-  - 1000
+  - 350
   - 1500
-  - 2000
-  - 3000
+  - 2500
   - 4000
   - 5000
-  minesMultiplier: 2
+  minesMultiplier: 3
 --- !u!4 &1216621869
 Transform:
   m_ObjectHideFlags: 0
