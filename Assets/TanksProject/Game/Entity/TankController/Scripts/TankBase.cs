@@ -32,9 +32,9 @@ namespace TanksProject.Game.Entity.TankController
         #region PROPERTIES
         public Vector2Int Tile { get => currentTile; }
         public STATE State { get => state; }
-        public int TurnsAlive { get => turnsAlive; }
+        public int TurnsAlive { get => turnsAlive; set => turnsAlive = value; }
         public Genome Genome { get => genome; }
-        public NeuralNetwork Brain { get => brain; set => brain = value; }
+        public NeuralNetwork Brain { get => brain; }
         #endregion
 
         #region ACTIONS
@@ -117,9 +117,9 @@ namespace TanksProject.Game.Entity.TankController
             return new Vector2Int(Mathf.Abs(targetTile.x - currentTile.x), Mathf.Abs(targetTile.y - currentTile.y));
         }
 
-        protected Vector2Int GetLastAbsDistToObject(Vector2Int targetTile)
+        protected Vector2Int GetLastAbsDistToObject(Vector2Int targetTile, Vector2Int fromPos)
         {
-            return new Vector2Int(Mathf.Abs(targetTile.x - fromTile.x), Mathf.Abs(targetTile.y - fromTile.y));
+            return new Vector2Int(Mathf.Abs(targetTile.x - fromPos.x), Mathf.Abs(targetTile.y - fromPos.y));
         }
 
         protected void SetMovement(Vector2Int movement)
@@ -151,7 +151,7 @@ namespace TanksProject.Game.Entity.TankController
             onTakeMine.Invoke(mine);
         }
 
-        protected virtual void OnReset()
+        public virtual void OnReset()
         {
             state = STATE.SURVIVE;
         }

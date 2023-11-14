@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public class Genome
 {
@@ -66,8 +67,9 @@ public class GeneticAlgorithm
 
 		population.AddRange(reproducible);
 		population.Sort(HandleComparison);
+        
 
-		foreach (Genome g in population)
+        foreach (Genome g in population)
 		{
 			totalFitness += g.fitness;
 		}
@@ -94,10 +96,10 @@ public class GeneticAlgorithm
 
         foreach (Genome g in population)
         {
-            totalFitness += g.fitness;
+            totalFitness += (g.fitness > 0 ? g.fitness : 0);
         }
 
-        for (int i = 0; i < 4 && newPopulation.Count < population.Count; i++)
+        for (int i = population.Count - 1; i > population.Count - 5 &&  i > 0 ; i--)
 		{
 			newPopulation.Add(population[i]);
 		}
@@ -212,7 +214,7 @@ public class GeneticAlgorithm
 				return population[i];
 		}
 
-		return null;
+		return population.Last();
 	}
 
     public Genome RandomSelection(Genome[] genomesToChoose)

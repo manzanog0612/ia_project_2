@@ -31,6 +31,7 @@ namespace TanksProject.Game.UI
         [SerializeField] private Text sigmoidSlopeTxt;
         [SerializeField] private Slider sigmoidSlopeSlider;
         [SerializeField] private Button startButton;
+        [SerializeField] private Button startDefaultButton;
         [SerializeField] private Button loadSimButton;
         [SerializeField] private GameObject simulationScreen;
         #endregion
@@ -49,6 +50,7 @@ namespace TanksProject.Game.UI
 
         #region ACTIONS
         private Action onStartSimulation = null;
+        private Action onStartDefaultSimulation = null;
         private Action<SimData> onStartLoadedSimulation = null;
         #endregion
 
@@ -86,14 +88,16 @@ namespace TanksProject.Game.UI
             sigmoidSlopeSlider.value = GameData.Inst.P;
 
             startButton.onClick.AddListener(OnStartButtonClick);
+            startDefaultButton.onClick.AddListener(OnStartDefaultButtonClick);
             loadSimButton.onClick.AddListener(OnLoadSim);
         }
         #endregion
 
         #region PUBLIC_METHODS
-        public void Init(Action onStartSimulation, Action<SimData> onStartLoadedSimulation)
+        public void Init(Action onStartSimulation, Action onStartDefaultSimulation, Action<SimData> onStartLoadedSimulation)
         {
             this.onStartSimulation = onStartSimulation;
+            this.onStartDefaultSimulation = onStartDefaultSimulation;
             this.onStartLoadedSimulation = onStartLoadedSimulation;
         }
         #endregion
@@ -193,6 +197,14 @@ namespace TanksProject.Game.UI
         private void OnStartButtonClick()
         {
             onStartSimulation.Invoke();
+
+            gameObject.SetActive(false);
+            simulationScreen.SetActive(true);
+        }
+
+        private void OnStartDefaultButtonClick()
+        {
+            onStartDefaultSimulation.Invoke();
 
             gameObject.SetActive(false);
             simulationScreen.SetActive(true);

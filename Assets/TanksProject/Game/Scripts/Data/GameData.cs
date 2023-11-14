@@ -33,7 +33,7 @@ namespace TanksProject.Game.Data
         public float MutationChance = 0;
         public float MutationRate = 0;
 
-        public float TurnsPerGeneration = 0;
+        public int TurnsPerGeneration = 0;
         public float TurnDuration = 0;
         public int InputsCount = 0;
         public int HiddenLayers = 0;
@@ -42,12 +42,14 @@ namespace TanksProject.Game.Data
         public float Bias = 0;
         public float P = 0;
 
-        public int MinGenerationToStartHungerGames = 0;
+        public bool learning = true;
+        public bool minesOnCenter = true;
         public int TestIndex = 0;
         #endregion
 
         #region EXPOSED_FIELDS
         [SerializeField] private float[] fitnessTillNewTest = null;
+        [SerializeField] private float minesMultiplier = 1;
         #endregion
 
         #region PRIVATE_FIELDS
@@ -59,19 +61,8 @@ namespace TanksProject.Game.Data
         public int MinesCount 
         { 
             get
-            { 
-                if (TestIndex < 2)
-                {
-                    return PopulationCount * 4;
-                }
-                else if (TestIndex < 3)
-                {
-                    return PopulationCount * 3;
-                }
-                else
-                {
-                    return PopulationCount * 2;
-                }
+            {
+                return (int)(PopulationCount * minesMultiplier);
             } 
         }
 

@@ -60,6 +60,11 @@ namespace TanksProject.Game.Entity.MinesController
 
         public Mine GetNearestMine(Vector3 pos)
         {
+            if (mines.Count == 0)
+            {
+                return null;
+            }
+
             Mine nearest = mines[0];
             float distance = (pos - nearest.transform.position).sqrMagnitude;
 
@@ -90,7 +95,7 @@ namespace TanksProject.Game.Entity.MinesController
 
             Vector2Int GetRandTile()
             {
-                if (GameData.Inst.TestIndex < 3)
+                if (GameData.Inst.minesOnCenter)
                 {
                     return new Vector2Int(Random.Range(GameData.Inst.PopulationCount, grid.Width - GameData.Inst.PopulationCount - 1),
                     Random.Range(1, grid.Height - 1));

@@ -4,7 +4,7 @@ namespace TanksProject.Common.Saving
     public class ConfigurationData
     {
         public int population_count;
-        public float turnsPerGeneration;
+        public int turnsPerGeneration;
         public float turnDuration;
         public float mutation_chance;
         public float mutation_rate;
@@ -25,8 +25,8 @@ namespace TanksProject.Common.Saving
     [System.Serializable]
     public class SimData
     {
+        public float maxAvgFitness;
         public TeamData[] teamsData;
-
         public ConfigurationData config;
     }
 

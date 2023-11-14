@@ -22,6 +22,9 @@ namespace TanksProject.Game
         [Header("UI Controllers")]
         [SerializeField] private StartConfigurationScreen startConfigurationScreen = null;
         [SerializeField] private SimulationScreen simulationScreen = null;
+
+        [Header("Default Generations")]
+        [SerializeField] private TextAsset startGenerations = null;
         #endregion
 
         #region PRIVATE_FIELDS
@@ -29,6 +32,7 @@ namespace TanksProject.Game
         private int teamsAmount = Enum.GetValues(typeof(TEAM)).Length;
 
         private bool simulationOn = false;
+        private float maxAvg = 0;
         #endregion
 
         #region UNITY_CALLS
@@ -78,7 +82,7 @@ namespace TanksProject.Game
             Camera.main.orthographicSize = grid.Width / 2 + 5;
             Camera.main.transform.position = new Vector3(grid.Width / 2, 10, grid.Height / 2 + 5);
 
-            startConfigurationScreen.Init(StartSimulation, StartLoadedSimulation);
+            startConfigurationScreen.Init(StartSimulation, StartDefaultSimulation, StartLoadedSimulation);
             simulationScreen.Init(PauseSimulation, StopSimulation, SaveSimulation);
         }
         #endregion
@@ -111,6 +115,7 @@ namespace TanksProject.Game
             config.bias = GameData.Inst.Bias;
             config.sigmoid = GameData.Inst.P;
             SimData simData = new SimData();
+            simData.maxAvgFitness = maxAvg;
             simData.config = config;
             simData.teamsData = new TeamData[populationManagers.Count];
 
@@ -135,8 +140,16 @@ namespace TanksProject.Game
             simulationOn = true;
         }
 
+        private void StartDefaultSimulation()
+        {
+            StartLoadedSimulation(JsonUtility.FromJson<SimData>(startGenerations.text));
+        }
+
+
         private void StartLoadedSimulation(SimData simData)
         {
+            maxAvg = simData.maxAvgFitness;
+
             for (int i = 0; i < teamsAmount; i++)
             {
                 populationManagers[(TEAM)i].StartLoadedSimulation(simData);
@@ -167,21 +180,23 @@ namespace TanksProject.Game
 
         private void Epoch()
         {
-            if ((populationManagers[TEAM.RED].Generation != 0 && 
-                populationManagers[TEAM.RED].Generation % GameData.Inst.MinGenerationToStartHungerGames == 0) ||
-                populationManagers[TEAM.BLUE].Generation != 0 &&
-                populationManagers[TEAM.BLUE].Generation % GameData.Inst.MinGenerationToStartHungerGames == 0)
+            float redTeamAvg = populationManagers[TEAM.RED].AvgFitness;
+            float blueTeamAvg = populationManagers[TEAM.BLUE].AvgFitness;
+
+            if (redTeamAvg > maxAvg || blueTeamAvg > maxAvg)
             {
+                maxAvg = redTeamAvg > blueTeamAvg ? redTeamAvg : blueTeamAvg;
                 SaveSimulation();
             }
 
-            if (populationManagers[TEAM.RED].Generation > GameData.Inst.MinGenerationToStartHungerGames || 
-                populationManagers[TEAM.BLUE].Generation > GameData.Inst.MinGenerationToStartHungerGames)
-            { 
-                SetStateByMinesEaten(); 
+            if (!GameData.Inst.learning)
+            {
+                SetStateByMinesEaten();
             }
 
             List<TEAM> deadTeams = new List<TEAM>();
+
+            minesManager.CreateMines();
 
             for (int i = 0; i < teamsAmount; i++)
             {
@@ -208,7 +223,7 @@ namespace TanksProject.Game
                 else
                 {
                     StopSimulation();
-                    StartSimulation();
+                    StartDefaultSimulation();
 
                     Debug.Log("Both teams dead");
                 }
@@ -216,9 +231,7 @@ namespace TanksProject.Game
                 return;
             }
 
-            Debug.Log("neither teams dead");
-
-            minesManager.CreateMines();
+            //Debug.Log("neither teams dead");
         }
 
         private void ChangeTurn()
