@@ -107,7 +107,7 @@ namespace TanksProject.Game.Entity.MinesController
 
             Vector2Int GetRandTile()
             {
-                if (GameData.Inst.minesOnCenter)
+                if (GameData.Inst.MinesOnCenter)
                 {
                     return new Vector2Int(Random.Range(GameData.Inst.PopulationCount, grid.Width - GameData.Inst.PopulationCount - 1),
                     Random.Range(1, grid.Height - 1));

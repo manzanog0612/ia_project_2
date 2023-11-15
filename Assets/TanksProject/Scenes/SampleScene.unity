@@ -3945,7 +3945,7 @@ MonoBehaviour:
   MutationRate: 0.29
   TurnsPerGeneration: 300
   TurnDuration: 0.01
-  InputsCount: 18
+  InputsCount: 19
   HiddenLayers: 10
   OutputsCount: 4
   NeuronsCountPerHL: 30

@@ -20,9 +20,14 @@ namespace TanksProject.Game.Entity.TankController
         private Mine lastNearMine = null;
         private Vector2Int lastMovement = Vector2Int.zero;
         private List<Vector2Int> movements = new List<Vector2Int>();
+        private int goodCalls = 0;
+        private int badCalls = 0;
+        private bool halfFood = false;
 
         //Decisions
         private bool runAway = false;
+        private Vector2Int movementInCaseOfLettingOtherEat = Vector2Int.zero;
+        private bool thisTankEats = false;
         #endregion
 
         #region PROPERTIES
@@ -42,25 +47,36 @@ namespace TanksProject.Game.Entity.TankController
             lastNearMine = null;
             lastMovement = Vector2Int.zero;
             movements.Clear();
+            goodCalls = 0;
+            badCalls = 0;
+            halfFood = false;
 
             runAway = false;
+            movementInCaseOfLettingOtherEat = Vector2Int.zero;
         }
 
         protected override void OnThink()
         {
-            Vector2Int tMine = Vector2Int.zero;
-            if (nearMine != null)
-            {
-                tMine = nearMine.Tile;
-            }
+            Vector2Int tMine = GetMineTile(nearMine);
+            Vector2Int tEnemy = GetTankTile(nearEnemyTank);
+            Vector2Int tTeam = GetTankTile(nearTeamTank);
 
-            Vector2Int tEnemy = nearEnemyTank.Tile;
-            Vector2Int tTeam = nearTeamTank.Tile;
+            int minesEatenByCloserTeammate = 0;
+            if (nearTeamTank != null)
+            {
+                minesEatenByCloserTeammate = nearTeamTank.MinesEaten;
+            }
 
             Vector2Int distToMine = GetDistToObject(tMine);
             Vector2Int absDistToMine = GetAbsDistToObject(tMine);
             Vector2Int distEnemyTank = GetDistToObject(tEnemy);
             Vector2Int distTeamTank = GetDistToObject(tTeam);
+
+            Vector2Int absDistToEnemyTank = GetAbsDistToObject(tEnemy);
+            Vector2Int absDistToTeamTank = GetAbsDistToObject(tTeam);
+            bool nextToEnemy = nearEnemyTank != null && absDistToEnemyTank.x <= 1 && absDistToEnemyTank.y <= 1;
+            bool nextToTeam = nearTeamTank != null && absDistToTeamTank.x <= 1 && absDistToTeamTank.y <= 1;
+            int nextTo = nextToEnemy ? -1 : (nextToTeam ? 1 : 0);
 
             List<float> inputs = new List<float>
             {
@@ -81,7 +97,8 @@ namespace TanksProject.Game.Entity.TankController
                 distTeamTank.x,
                 distTeamTank.y,
                 minesEaten,
-                nearTeamTank.MinesEaten//18
+                minesEatenByCloserTeammate,
+                nextTo//19
             };
 
             float[] output = brain.Synapsis(inputs.ToArray());
@@ -90,7 +107,8 @@ namespace TanksProject.Game.Entity.TankController
             Vector2Int movement = TraduceMovement(output[0]);
             Vector2Int lastTile = currentTile;
             runAway = output[1] > 0.5f;
-            //bool thisTankEats = output[2] > 0;
+            thisTankEats = output[2] > 0.5f;
+            movementInCaseOfLettingOtherEat = TraduceMovementToAdjacent(output[3]);
 
             SetMovement(movement);
 
@@ -110,14 +128,107 @@ namespace TanksProject.Game.Entity.TankController
         #endregion
 
         #region PUBLIC_METHODS
+        public void TakeHalfFood()
+        {
+            if (halfFood)
+            {
+                minesEaten++;
+                lessTurnsTakenUntilMine = turnsNoMine < lessTurnsTakenUntilMine ? turnsNoMine : lessTurnsTakenUntilMine;
+                turnsNoMine = 0;
+
+                halfFood = false;
+            }
+            else
+            {
+                halfFood = true;
+            }
+
+            nearMine = null;
+        }
+
         public bool ChooseWhetherToFlee()
         {
             if (runAway)
             {
+                if (currentTile == nearMine.Tile && minesEaten == 0)
+                {
+                    badCalls++;
+                }
+
                 RunAway();
             }
 
+            if (minesEaten >= 2)
+            {
+                if (runAway)
+                {
+                    goodCalls++;
+                }
+                else
+                {
+                    badCalls++;
+                }               
+            }
+
             return runAway;
+        }
+
+        public bool ChooseWhetherToEat()
+        {
+            if (thisTankEats)
+            {
+                if (minesEaten > nearTeamTank.minesEaten)
+                {
+                    badCalls++;
+                }
+                else
+                {
+                    goodCalls++;
+                }
+            }
+            else
+            {
+                if (minesEaten < nearTeamTank.minesEaten)
+                {
+                    badCalls++;
+                }
+                else
+                {
+                    goodCalls++;
+                }
+
+                SetMovement(movementInCaseOfLettingOtherEat);
+            }
+
+            return thisTankEats;
+        }
+
+        public void OnTurnUpdated()
+        {
+            Vector2Int tMine = GetMineTile(nearMine);
+            Vector2Int tEnemy = GetTankTile(nearEnemyTank);
+            Vector2Int tTeam = GetTankTile(nearTeamTank);
+
+            if (currentTile == tEnemy || (currentTile == tTeam && currentTile == tMine))
+            {
+                return; //decision to be made
+            }
+
+            if (nearMine != null)
+            {
+                if (currentTile == tMine)
+                {
+                    OnTakeMine(nearMine.gameObject);
+                }
+                else
+                {
+                    turnsNoMine++;
+                }
+
+                TrackIfCloserToMine(currentTile - lastMovement);
+                TrackIfFartherFromMine(currentTile - lastMovement);
+                TrackPenalties();
+            }
         }
 
         public void TrackFitness()
@@ -137,62 +248,27 @@ namespace TanksProject.Game.Entity.TankController
                     break;
                 case 3:
                     SetFitness(FitnessByCachedMines() +
-                               FitnessByTurnMovingTowardsMines() -
+                               FitnessByTurnMovingTowardsMines() +
                                FitnessByPenalties());
                     break;
                 case 4:
                     SetFitness(FitnessByCachedMines() +
                                FitnessByTurnMovingTowardsMines() +
-                               FitnessByLessTurnsTakenUntilMine() -
+                               FitnessByLessTurnsTakenUntilMine() +
+                               FitnessByPenalties());
+                    break;
+                case 5:
+                    SetFitness(FitnessByCachedMines() +
+                               FitnessByTurnMovingTowardsMines() +
+                               FitnessByLessTurnsTakenUntilMine() +
+                               FitnessByGoodAndBadCalls() +
                                FitnessByPenalties());
                     break;
                 default:
-                    SetFitness(FitnessByCachedMines() -
+                    SetFitness(FitnessByCachedMines() +
+                               FitnessByGoodAndBadCalls() +
                                FitnessByPenalties());
                     break;
-            }
-        }
-
-        public void OnTurnUpdated()
-        {
-            Vector2Int tMine = Vector2Int.zero;
-            if (nearMine != null)
-            {
-                tMine = nearMine.Tile;
-            }
-            Vector2Int tEnemy = nearEnemyTank.Tile;
-            Vector2Int tTeam = nearTeamTank.Tile;
-
-            bool choiceToBeMade = false;
-
-            if (currentTile == tEnemy && currentTile == tMine)
-            {
-                choiceToBeMade = true;
-            }
-            //else //if (currentTile == tTeam && currentTile == tMine && thisTankEats)
-            //{
-            //    //SetMovement(movement);
-            //}
-
-            if (choiceToBeMade)
-            {
-                return;
-            }
-
-            if (nearMine != null)
-            {
-                if (currentTile == tMine)
-                {
-                    OnTakeMine(nearMine.gameObject);
-                }
-                else
-                {
-                    turnsNoMine++;
-                }
-
-                TrackIfCloserToMine(currentTile - lastMovement);
-                TrackIfFartherFromMine(currentTile - lastMovement);
-                TrackPenalties();
             }
         }
         #endregion
@@ -220,26 +296,26 @@ namespace TanksProject.Game.Entity.TankController
             {
                 return Vector2Int.zero;
             }
-            //if (movement > 0.6f)
-            //{
-            //    return Vector2Int.up;
-            //}
-            //else if (movement > 0.2f)
-            //{
-            //    return Vector2Int.right;
-            //}
-            //else if (movement > -0.2f)
-            //{
-            //    return Vector2Int.down;
-            //}
-            //else if (movement > -0.6f)
-            //{
-            //    return Vector2Int.left;
-            //}
-            //else
-            //{
-            //    return Vector2Int.zero;                
-            //}
+        }
+
+        private Vector2Int TraduceMovementToAdjacent(float movement)
+        {
+            if (movement > 0.75f)
+            {
+                return Vector2Int.up;
+            }
+            else if (movement > 0.5f)
+            {
+                return Vector2Int.right;
+            }
+            else if (movement > 0.25f)
+            {
+                return Vector2Int.down;
+            }
+            else
+            {
+                return Vector2Int.left;
+            }
         }
         #endregion
 
@@ -267,7 +343,12 @@ namespace TanksProject.Game.Entity.TankController
 
         private int FitnessByPenalties()
         {
-            return penalties * 300;
+            return -penalties * 300;
+        }
+
+        private int FitnessByGoodAndBadCalls()
+        {
+            return (goodCalls - badCalls) * 500;
         }
         #endregion
 
@@ -314,6 +395,26 @@ namespace TanksProject.Game.Entity.TankController
         private void SetFitness(float fitness)
         {
             genome.fitness = fitness;
+        }
+
+        private Vector2Int GetTankTile(Tank tank)
+        {
+            if (tank != null)
+            {
+                return tank.Tile;
+            }
+
+            return Vector2Int.zero;
+        }
+
+        private Vector2Int GetMineTile(Mine mine)
+        {
+            if (mine != null)
+            {
+                return mine.Tile;
+            }
+
+            return Vector2Int.zero;
         }
         #endregion
     }

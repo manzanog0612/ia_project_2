@@ -101,6 +101,10 @@ namespace TanksProject.Game
             config.neurons_per_hidden_layers = GameData.Inst.NeuronsCountPerHL;
             config.bias = GameData.Inst.Bias;
             config.sigmoid = GameData.Inst.P;
+            config.learning = GameData.Inst.Learning;
+            config.minesOnCenter = GameData.Inst.MinesOnCenter;
+            config.testIndex = GameData.Inst.TestIndex;
+            config.minesMultiplier = GameData.Inst.MinesMultiplier;
             SimData simData = new SimData();
             simData.maxAvgFitness = maxAvg;
             simData.config = config;
@@ -135,6 +139,10 @@ namespace TanksProject.Game
         private void StartLoadedSimulation(SimData simData)
         {
             maxAvg = simData.maxAvgFitness;
+            GameData.Inst.Learning = simData.config.learning;
+            GameData.Inst.MinesOnCenter = simData.config.minesOnCenter;
+            GameData.Inst.TestIndex = simData.config.testIndex;
+            GameData.Inst.MinesMultiplier = simData.config.minesMultiplier;
 
             for (int i = 0; i < teamsAmount; i++)
             {
@@ -164,7 +172,7 @@ namespace TanksProject.Game
             simulationOn = false;
         }
 
-        private void Epoch()
+        private void UpdateSimulationData()
         {
             float redTeamAvg = populationManagers[TEAM.RED].AvgFitness;
             float blueTeamAvg = populationManagers[TEAM.BLUE].AvgFitness;
@@ -175,7 +183,16 @@ namespace TanksProject.Game
                 SaveSimulation();
             }
 
-            if (!GameData.Inst.learning)
+            if (GameData.Inst.FitnessTillNewTest.Length > GameData.Inst.TestIndex &&
+                Mathf.Max(redTeamAvg, blueTeamAvg) > GameData.Inst.FitnessTillNewTest[GameData.Inst.TestIndex])
+            {
+                GameData.Inst.TestIndex++;
+            }
+        }
+
+        private void Epoch()
+        {
+            if (!GameData.Inst.Learning)
             {
                 SetStateByMinesEaten();
             }
@@ -194,6 +211,8 @@ namespace TanksProject.Game
                     deadTeams.Add(team);
                 }
             }
+
+            UpdateSimulationData();
 
             if (deadTeams.Count > 0)
             {
@@ -231,6 +250,11 @@ namespace TanksProject.Game
             for (int i = 0; i < teamsAmount; i++)
             {
                 populationManagers[(TEAM)i].OnTurnUpdated();
+            }
+
+            for (int i = 0; i < teamsAmount; i++)
+            {
+                populationManagers[(TEAM)i].HandleTanksOnSameTile();
             }
 
             HandleEnemiesInSameTile();

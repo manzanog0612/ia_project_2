@@ -42,14 +42,16 @@ namespace TanksProject.Game.Data
         public float Bias = 0;
         public float P = 0;
 
-        public bool learning = true;
-        public bool minesOnCenter = true;
+        //--------------------------------------
+
+        public bool Learning = true;
+        public bool MinesOnCenter = true;
         public int TestIndex = 0;
+        public float MinesMultiplier = 1;
         #endregion
 
         #region EXPOSED_FIELDS
         [SerializeField] private float[] fitnessTillNewTest = null;
-        [SerializeField] private float minesMultiplier = 1;
         #endregion
 
         #region PRIVATE_FIELDS
@@ -62,7 +64,7 @@ namespace TanksProject.Game.Data
         { 
             get
             {
-                return (int)(PopulationCount * minesMultiplier);
+                return (int)(PopulationCount * MinesMultiplier);
             } 
         }
 

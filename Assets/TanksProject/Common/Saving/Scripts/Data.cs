@@ -12,6 +12,11 @@ namespace TanksProject.Common.Saving
         public float neurons_per_hidden_layers;
         public float bias;
         public float sigmoid;
+        //------------------
+        public bool learning;
+        public bool minesOnCenter;
+        public int testIndex;
+        public float minesMultiplier;
     }
 
     [System.Serializable]
