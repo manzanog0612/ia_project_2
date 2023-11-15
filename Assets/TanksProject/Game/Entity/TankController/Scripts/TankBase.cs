@@ -152,6 +152,7 @@ namespace TanksProject.Game.Entity.TankController
         protected virtual void OnTakeMine(GameObject mine)
         {
             onTakeMine.Invoke(mine);
+            nearMine = null;
         }
 
         public virtual void OnReset()

@@ -1,14 +1,11 @@
 using System.Collections.Generic;
+using System.Linq;
 
 using UnityEngine;
+using UnityEngine.Pool;
 
 using TanksProject.Game.Data;
 using TanksProject.Game.Entity.MineController;
-using TanksProject.Game.Entity.PopulationController;
-using System.Buffers;
-using UnityEngine.Pool;
-using static UnityEditor.PlayerSettings;
-using System.Linq;
 
 namespace TanksProject.Game.Entity.MinesController
 {
@@ -36,8 +33,6 @@ namespace TanksProject.Game.Entity.MinesController
         public void OnTakeMine(GameObject mine)
         {
             minesPool.Release(mine.GetComponent<Mine>());
-            //activeMines.Remove(mine.GetComponent<Mine>());
-            //Destroy(mine);
         }
 
         public void CreateMines()
@@ -62,13 +57,6 @@ namespace TanksProject.Game.Entity.MinesController
             {
                 minesPool.Release(activeMines[i]);
             }
-
-           //foreach (Mine go in activeMines)
-           //{ 
-           //    Destroy(go.gameObject); 
-           //}
-           //
-           //activeMines.Clear();
         }
 
         public Mine GetNearestMine(Vector3 pos)

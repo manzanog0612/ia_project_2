@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 using UnityEngine;
+using UnityEngine.Pool;
 
 using TanksProject.Game.Entity.MineController;
 using TanksProject.Game.Entity.TankController;
@@ -24,7 +25,8 @@ namespace TanksProject.Game.Entity.PopulationController
         #region PRIVATE_FIELDS
         private GeneticAlgorithm genAlg;
 
-        private List<Tank> tanks = new List<Tank>();
+        private List<Tank> activeTanks = new List<Tank>();
+        private ObjectPool<Tank> tanksPool = null;
 
         private Grid grid = null;
         private Vector2Int[] tankStartTiles = null;
@@ -47,7 +49,7 @@ namespace TanksProject.Game.Entity.PopulationController
         public float AvgFitness { get; private set; }
         public float WorstFitness { get; private set; }
         public TEAM Team { get => team; }
-        public List<Tank> Tanks { get => tanks; }
+        public List<Tank> Tanks { get => activeTanks; }
         public bool Dead { get; private set; }
         #endregion
 
@@ -68,6 +70,8 @@ namespace TanksProject.Game.Entity.PopulationController
             this.onTakeMine = onTakeMine;
 
             Dead = false;
+
+            tanksPool = new ObjectPool<Tank>(CreateTank, OnGetTank, OnReleaseTank);
         }
 
         public void StartLoadedSimulation(SimData sim)
@@ -133,13 +137,13 @@ namespace TanksProject.Game.Entity.PopulationController
         {
             TeamData teamData = new TeamData();
             teamData.generation_count = Generation;
-            teamData.genomes = new GenomeData[tanks.Count];
+            teamData.genomes = new GenomeData[activeTanks.Count];
 
-            for (int i = 0; i < tanks.Count; i++)
+            for (int i = 0; i < activeTanks.Count; i++)
             {
                 teamData.genomes[i] = new GenomeData();
-                teamData.genomes[i].genomes = tanks[i].Brain.GetWeights();
-                teamData.genomes[i].fitness = tanks[i].Genome.fitness;
+                teamData.genomes[i].genomes = activeTanks[i].Brain.GetWeights();
+                teamData.genomes[i].fitness = activeTanks[i].Genome.fitness;
             }
 
             return teamData;
@@ -147,18 +151,18 @@ namespace TanksProject.Game.Entity.PopulationController
 
         public void OnTurnUpdated()
         {
-            for (int i = 0; i < tanks.Count; i++)
+            for (int i = 0; i < activeTanks.Count; i++)
             {
-                tanks[i].OnTurnUpdated();
+                activeTanks[i].OnTurnUpdated();
             }
         }
 
         public void HandleTanksOnSameTile()
         {
-            for (int i = 0; i < tanks.Count; i++)
+            for (int i = 0; i < activeTanks.Count; i++)
             {
-                Tank tank1 = tanks[i];
-                Tank tank2 = tanks[i].NearTeamTank;
+                Tank tank1 = activeTanks[i];
+                Tank tank2 = activeTanks[i].NearTeamTank;
 
                 if (tank1.Tile != tank2.Tile || (tank1.NearMine != tank2.NearMine) || tank1.NearMine == null)
                 {
@@ -191,9 +195,9 @@ namespace TanksProject.Game.Entity.PopulationController
 
         public void TrackFitness()
         {
-            for (int i = 0; i < tanks.Count; i++)
+            for (int i = 0; i < activeTanks.Count; i++)
             {
-                tanks[i].TrackFitness();
+                activeTanks[i].TrackFitness();
             }
         }
 
@@ -232,9 +236,9 @@ namespace TanksProject.Game.Entity.PopulationController
             if (!GameData.Inst.Learning)
             {
                 //Reset elites
-                for (int i = 0; i < tanks.Count; i++)
+                for (int i = 0; i < activeTanks.Count; i++)
                 {
-                    ResetTank(tanks[i], tankStartTiles[i]);
+                    ResetTank(activeTanks[i], tankStartTiles[i]);
                 }
 
                 // Set the new genomes as each NeuralNetwork weights
@@ -242,25 +246,25 @@ namespace TanksProject.Game.Entity.PopulationController
                 {
                     NeuralNetwork brain = CreateBrain();
                     brain.SetWeights(newGenomes[i].genome);
-                    tanks.Add(CreateTank(newGenomes[i], brain, tankStartTiles[i]));
+                    CreateTank(newGenomes[i], brain, tankStartTiles[i]);
                 }
             }
             else
             {
                 for (int i = 0; i < newGenomes.Length; i++)
                 {
-                    tanks[i].Brain.SetWeights(newGenomes[i].genome);
-                    tanks[i].SetBrain(newGenomes[i], tanks[i].Brain);
-                    ResetTank(tanks[i], tankStartTiles[i]);
+                    activeTanks[i].Brain.SetWeights(newGenomes[i].genome);
+                    activeTanks[i].SetBrain(newGenomes[i], activeTanks[i].Brain);
+                    ResetTank(activeTanks[i], tankStartTiles[i]);
                 }
             }
         }
 
         public void ChangeTurn()
         {
-            for (int i = 0; i < tanks.Count; i++)
+            for (int i = 0; i < activeTanks.Count; i++)
             {
-                Tank t = tanks[i];
+                Tank t = activeTanks[i];
 
                 Mine mine = onGetNearestMine.Invoke(t.transform.position);
                 t.SetNearestMine(mine);
@@ -279,19 +283,19 @@ namespace TanksProject.Game.Entity.PopulationController
         {
             Tank nearestTank = null;
             float closerDistance = float.MaxValue;
-            for (int j = 0; j < tanks.Count; j++)
+            for (int j = 0; j < activeTanks.Count; j++)
             {
-                if (tanks[j].gameObject == actualTank || tanks[j].IsDead())
+                if (activeTanks[j].gameObject == actualTank || activeTanks[j].IsDead())
                 {
                     continue;
                 }
 
-                float distance = Vector3.Distance(tanks[j].transform.position, actualTank.transform.position);
+                float distance = Vector3.Distance(activeTanks[j].transform.position, actualTank.transform.position);
 
                 if (distance < closerDistance)
                 {
                     closerDistance = distance;
-                    nearestTank = tanks[j];
+                    nearestTank = activeTanks[j];
                 }
             }
 
@@ -300,9 +304,9 @@ namespace TanksProject.Game.Entity.PopulationController
 
         public void SetStateByMinesEaten()
         {
-            for (int i = 0; i < tanks.Count; i++)
+            for (int i = 0; i < activeTanks.Count; i++)
             {
-                Tank tank = tanks[i];
+                Tank tank = activeTanks[i];
 
                 if (tank.IsDead())
                 {
@@ -331,11 +335,11 @@ namespace TanksProject.Game.Entity.PopulationController
 
         public Genome[] GetPopulation()
         {
-            Genome[] genomes = new Genome[tanks.Count];
+            Genome[] genomes = new Genome[activeTanks.Count];
 
-            for (int i = 0; i < tanks.Count; i++)
+            for (int i = 0; i < activeTanks.Count; i++)
             {
-                genomes[i] = tanks[i].Genome;
+                genomes[i] = activeTanks[i].Genome;
             }
             return genomes;
         }
@@ -344,9 +348,9 @@ namespace TanksProject.Game.Entity.PopulationController
         #region PRIVATE_METHODS
         private void UpdateTanksByState()
         {
-            for (int i = 0; i < tanks.Count; i++)
+            for (int i = 0; i < activeTanks.Count; i++)
             {
-                Tank tank = tanks[i];
+                Tank tank = activeTanks[i];
                 if (tank.State == STATE.REPRODUCE || tank.State == STATE.SURVIVE)
                 {
                     if (tank.TurnsAlive == 3)
@@ -360,11 +364,11 @@ namespace TanksProject.Game.Entity.PopulationController
                 }
             }
 
-            for (int i = tanks.Count - 1; i >= 0; i--)
+            for (int i = activeTanks.Count - 1; i >= 0; i--)
             {
-                if (tanks[i].IsDead())
+                if (activeTanks[i].IsDead())
                 {
-                    DestroyTank(tanks[i]);
+                    DestroyTank(activeTanks[i]);
                 }
             }
         }
@@ -373,9 +377,9 @@ namespace TanksProject.Game.Entity.PopulationController
         {
             int elites = 0;
             List<Genome> reproducible = new List<Genome>();
-            for (int i = 0; i < tanks.Count; i++)
+            for (int i = 0; i < activeTanks.Count; i++)
             {
-                Tank tank = tanks[i];
+                Tank tank = activeTanks[i];
                 if (tank.State == STATE.REPRODUCE || tank.State == STATE.SURVIVE)
                 {
                     if (tank.State == STATE.REPRODUCE)
@@ -411,7 +415,7 @@ namespace TanksProject.Game.Entity.PopulationController
         private void OnCreateTank(NeuralNetwork brain, Genome genome, Vector2Int startTile)
         {
             brain.SetWeights(genome.genome);
-            tanks.Add(CreateTank(genome, brain, startTile));
+            CreateTank(genome, brain, startTile);
         }
 
         private void ResetTank(Tank tank, Vector2Int startTile)
@@ -439,6 +443,29 @@ namespace TanksProject.Game.Entity.PopulationController
             brain.AddNeuronLayer(GameData.Inst.OutputsCount, GameData.Inst.Bias, GameData.Inst.P);
 
             return brain;
+        }
+        #endregion
+
+        #region POOL_METHODS
+        private Tank CreateTank()
+        {
+            GameObject go = Instantiate(TankPrefab, transform);
+            Tank t = go.GetComponent<Tank>();
+            t.gameObject.name = t.gameObject.name.Replace("(Clone)", ids++.ToString());
+            return t;
+        }
+
+        private void OnGetTank(Tank tank)
+        {
+            tank.gameObject.SetActive(true);
+            tank.OnReset();
+            activeTanks.Add(tank);
+        }
+
+        private void OnReleaseTank(Tank tank)
+        {
+            tank.gameObject.SetActive(false);
+            activeTanks.Remove(tank);
         }
         #endregion
 
@@ -488,28 +515,27 @@ namespace TanksProject.Game.Entity.PopulationController
         private Tank CreateTank(Genome genome, NeuralNetwork brain, Vector2Int gridPos)
         {
             Vector3 position = grid.GetTilePos(gridPos);
-            GameObject go = Instantiate(TankPrefab, position, Quaternion.identity, transform);
-            Tank t = go.GetComponent<Tank>();
-            t.Init(grid, gridPos, GameData.Inst.TurnDuration, onTakeMine);
-            t.SetBrain(genome, brain);
-            t.gameObject.name = t.gameObject.name.Replace("(Clone)", ids++.ToString());
-            return t;
+            
+            Tank tank = tanksPool.Get();
+            tank.transform.position = position;
+            tank.transform.rotation = Quaternion.identity;
+            tank.Init(grid, gridPos, GameData.Inst.TurnDuration, onTakeMine);
+            tank.SetBrain(genome, brain);
+
+            return tank;
         }
 
         private void DestroyTanks()
         {
-            foreach (Tank go in tanks)
-            { 
-                Destroy(go.gameObject); 
+            for (int i = activeTanks.Count - 1; i >= 0 ; i--)
+            {
+                tanksPool.Release(activeTanks[i]);
             }
-
-            tanks.Clear();
         }
 
         private void DestroyTank(Tank go)
         {
-            tanks.Remove(go);
-            Destroy(go.gameObject);
+            tanksPool.Release(go);
         }
         #endregion
     }

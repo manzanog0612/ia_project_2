@@ -216,6 +216,10 @@ namespace TanksProject.Game.Entity.TankController
 
             if (nearMine != null)
             {
+                TrackIfCloserToMine(currentTile - lastMovement);
+                TrackIfFartherFromMine(currentTile - lastMovement);
+                TrackPenalties();
+
                 if (currentTile == tMine)
                 {
                     OnTakeMine(nearMine.gameObject);
@@ -223,11 +227,7 @@ namespace TanksProject.Game.Entity.TankController
                 else
                 {
                     turnsNoMine++;
-                }
-
-                TrackIfCloserToMine(currentTile - lastMovement);
-                TrackIfFartherFromMine(currentTile - lastMovement);
-                TrackPenalties();
+                }                
             }
         }
 
