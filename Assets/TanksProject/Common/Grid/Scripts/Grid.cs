@@ -44,7 +44,7 @@ namespace TanksProject.Common.Grid
                     tile.y = y;
                     tile.go = tileGO;
 
-                    tileGO.GetComponentInChildren<MeshRenderer>().material = x % 2 == 0 && y % 2 != 0 ? mat1 : mat2;
+                    tileGO.GetComponentInChildren<MeshRenderer>().material = (x % 2 == 0 && y % 2 != 0) || (x % 2 != 0 && y % 2 == 0) ? mat1 : mat2;
                     
                     grid[x, y] = tile;
                 }
