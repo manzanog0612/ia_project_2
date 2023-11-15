@@ -150,7 +150,7 @@ namespace TanksProject.Game.Entity.TankController
         {
             if (runAway)
             {
-                if (currentTile == nearMine.Tile && minesEaten == 0)
+                if (nearMine != null && currentTile == nearMine.Tile && minesEaten == 0)//
                 {
                     badCalls++;
                 }
