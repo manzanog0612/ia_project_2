@@ -2,6 +2,7 @@
 
 using TanksProject.Game.Entity.MineController;
 using System;
+using TanksProject.Game.Data;
 
 namespace TanksProject.Game.Entity.TankController
 {
@@ -9,11 +10,6 @@ namespace TanksProject.Game.Entity.TankController
 
     public class TankBase : MonoBehaviour
     {
-        #region EXPOSED_FIELDS
-        [SerializeField] protected float Speed = 10.0f;
-        [SerializeField] protected float RotSpeed = 15.0f;
-        #endregion
-
         #region PROTECTED_FIELDS
         protected Genome genome;
         protected NeuralNetwork brain;
@@ -21,18 +17,17 @@ namespace TanksProject.Game.Entity.TankController
         protected Tank nearEnemyTank;
         protected Tank nearTeamTank;
         protected Common.Grid.Grid grid;
-        protected float[] inputs;
         protected Vector2Int currentTile = Vector2Int.zero;
         protected Vector2Int fromTile = Vector2Int.zero;
         protected float turnDuration = 1f;
         protected STATE state = STATE.SURVIVE;
-        protected int turnsAlive = 0;
+        protected int generationsAlive = 0;
         #endregion
 
         #region PROPERTIES
         public Vector2Int Tile { get => currentTile; }
         public STATE State { get => state; }
-        public int TurnsAlive { get => turnsAlive; set => turnsAlive = value; }
+        public int GenerationsAlive { get => generationsAlive; set => generationsAlive = value; }
         public Genome Genome { get => genome; }
         public NeuralNetwork Brain { get => brain; }
         public Mine NearMine { get => nearMine; }
@@ -52,6 +47,7 @@ namespace TanksProject.Game.Entity.TankController
             fromTile = currentTile;
             this.turnDuration = turnDuration;
             this.onTakeMine = onTakeMine;
+            generationsAlive = 0;
         }
 
         public void SetCurrentTile(Vector2Int currentTile)
@@ -64,7 +60,6 @@ namespace TanksProject.Game.Entity.TankController
         {
             this.genome = genome;
             this.brain = brain;
-            inputs = new float[brain.InputsCount];
             OnReset();
         }
 
@@ -95,7 +90,7 @@ namespace TanksProject.Game.Entity.TankController
 
         public void Think()
         {
-            if (IsDead())
+            if (IsDead() && !GameData.Inst.Learning)
             {
                 return;
             }
@@ -106,6 +101,12 @@ namespace TanksProject.Game.Entity.TankController
         public void TakeMine()
         {
             OnTakeMine(nearMine.gameObject);
+        }
+
+        public virtual void OnReset()
+        {
+            state = STATE.SURVIVE;
+            nearMine = null;
         }
         #endregion
 
@@ -146,18 +147,13 @@ namespace TanksProject.Game.Entity.TankController
 
         protected virtual void OnThink()
         {
-            turnsAlive++;
+            generationsAlive++;
         }
 
         protected virtual void OnTakeMine(GameObject mine)
         {
             onTakeMine.Invoke(mine);
             nearMine = null;
-        }
-
-        public virtual void OnReset()
-        {
-            state = STATE.SURVIVE;
         }
         #endregion
 

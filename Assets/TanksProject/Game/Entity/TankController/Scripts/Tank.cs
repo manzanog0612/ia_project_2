@@ -32,6 +32,7 @@ namespace TanksProject.Game.Entity.TankController
 
         #region PROPERTIES
         public int MinesEaten { get => minesEaten; }
+        public int GoodCalls { get => goodCalls; set => goodCalls = value; }
         #endregion
 
         #region OVERRIDE
@@ -98,7 +99,9 @@ namespace TanksProject.Game.Entity.TankController
                 distTeamTank.y,
                 minesEaten,
                 minesEatenByCloserTeammate,
-                nextTo//19
+                nextTo,
+                lastMovement.x,
+                lastMovement.y//21
             };
 
             float[] output = brain.Synapsis(inputs.ToArray());
@@ -150,7 +153,7 @@ namespace TanksProject.Game.Entity.TankController
         {
             if (runAway)
             {
-                if (nearMine != null && currentTile == nearMine.Tile && minesEaten == 0)//
+                if (IsValid(nearMine) && currentTile == nearMine.Tile && minesEaten == 0)
                 {
                     badCalls++;
                 }
@@ -192,7 +195,7 @@ namespace TanksProject.Game.Entity.TankController
                 {
                     badCalls++;
                 }
-                else
+                else if (!(minesEaten == 0 && nearTeamTank.minesEaten == 0))
                 {
                     goodCalls++;
                 }
@@ -209,12 +212,15 @@ namespace TanksProject.Game.Entity.TankController
             Vector2Int tEnemy = GetTankTile(nearEnemyTank);
             Vector2Int tTeam = GetTankTile(nearTeamTank);
 
-            if (currentTile == tEnemy || (currentTile == tTeam && currentTile == tMine))
+            bool mineIsValid = IsValid(nearMine);
+
+            if ((currentTile == tEnemy) || 
+                (currentTile == tTeam && currentTile == tMine && mineIsValid))
             {
                 return; //decision to be made
             }
 
-            if (nearMine != null)
+            if (mineIsValid)
             {
                 TrackIfCloserToMine(currentTile - lastMovement);
                 TrackIfFartherFromMine(currentTile - lastMovement);
@@ -243,21 +249,24 @@ namespace TanksProject.Game.Entity.TankController
                                FitnessByDiverseMovement());
                     break;
                 case 2:
+                    SetFitness(FitnessByCachedMines());
+                    break;
+                case 3:
                     SetFitness(FitnessByCachedMines() +
                                FitnessByTurnMovingTowardsMines());
                     break;
-                case 3:
+                case 4:
                     SetFitness(FitnessByCachedMines() +
                                FitnessByTurnMovingTowardsMines() +
                                FitnessByPenalties());
                     break;
-                case 4:
+                case 5:
                     SetFitness(FitnessByCachedMines() +
                                FitnessByTurnMovingTowardsMines() +
                                FitnessByLessTurnsTakenUntilMine() +
                                FitnessByPenalties());
                     break;
-                case 5:
+                case 6:
                     SetFitness(FitnessByCachedMines() +
                                FitnessByTurnMovingTowardsMines() +
                                FitnessByLessTurnsTakenUntilMine() +
@@ -266,8 +275,8 @@ namespace TanksProject.Game.Entity.TankController
                     break;
                 default:
                     SetFitness(FitnessByCachedMines() +
-                               FitnessByGoodAndBadCalls() +
-                               FitnessByPenalties());
+                               FitnessByLessTurnsTakenUntilMine() +
+                               FitnessByGoodAndBadCalls());
                     break;
             }
         }
@@ -322,7 +331,7 @@ namespace TanksProject.Game.Entity.TankController
         #region FITNESS_METHODS
         private int FitnessByCachedMines()
         {
-            return minesEaten * 1000;
+            return minesEaten * 1500;
         }
 
         private int FitnessByDiverseMovement()
@@ -338,17 +347,17 @@ namespace TanksProject.Game.Entity.TankController
 
         private int FitnessByTurnMovingTowardsMines()
         {
-            return (turnGettingCloserToMine - turnGettingFarFromMine) * 10;
+            return (turnGettingCloserToMine - turnGettingFarFromMine) * 5;
         }
 
         private int FitnessByPenalties()
         {
-            return -penalties * 300;
+            return -penalties * 150;
         }
 
         private int FitnessByGoodAndBadCalls()
         {
-            return (goodCalls - badCalls) * 500;
+            return (goodCalls - badCalls) * 250;
         }
         #endregion
 
@@ -374,8 +383,8 @@ namespace TanksProject.Game.Entity.TankController
             Vector2Int lastDistToMine = GetLastAbsDistToObject(nearMine.Tile, prevPos);
         
             if (((distToMine.x > lastDistToMine.x && distToMine.y == lastDistToMine.y) ||
-                (distToMine.y > lastDistToMine.y && distToMine.x == lastDistToMine.x) || 
-                lastMovement == Vector2Int.zero) && lastNearMine == nearMine)
+                (distToMine.y > lastDistToMine.y && distToMine.x == lastDistToMine.x)) && 
+                lastNearMine == nearMine)
             {
                 turnGettingFarFromMine++;
             }
@@ -399,7 +408,7 @@ namespace TanksProject.Game.Entity.TankController
 
         private Vector2Int GetTankTile(Tank tank)
         {
-            if (tank != null)
+            if (IsValid(tank))
             {
                 return tank.Tile;
             }
@@ -409,12 +418,17 @@ namespace TanksProject.Game.Entity.TankController
 
         private Vector2Int GetMineTile(Mine mine)
         {
-            if (mine != null)
+            if (IsValid(mine))
             {
                 return mine.Tile;
             }
 
             return Vector2Int.zero;
+        }
+
+        private bool IsValid(MonoBehaviour obj)
+        {
+            return obj != null && obj.gameObject.activeInHierarchy;
         }
         #endregion
     }

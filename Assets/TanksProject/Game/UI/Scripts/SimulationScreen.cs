@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 using TanksProject.Game.Data;
+using TanksProject.Game.Entity.MineController;
 
 namespace TanksProject.Game.UI
 {
@@ -11,6 +12,10 @@ namespace TanksProject.Game.UI
     {
         #region EXPOSED_FIELDS
         [SerializeField] private Text timerTxt;
+        [SerializeField] private Text minesTotalTxt;
+        [SerializeField] private Text minesLeftTxt;
+        [SerializeField] private Text minesBestTxt;
+        [SerializeField] private Text minesWorstTxt;
         [SerializeField] private Slider timerSlider;
         [SerializeField] private Button pauseBtn;
         [SerializeField] private Button stopBtn;
@@ -22,6 +27,9 @@ namespace TanksProject.Game.UI
 
         #region PRIVATE_FIELDS
         private string timerText;
+
+        private int bestMines = int.MaxValue;
+        private int worstMines = 0;
         #endregion
 
         #region ACTIONS
@@ -40,6 +48,8 @@ namespace TanksProject.Game.UI
 
             timerTxt.text = string.Format(timerText, GameData.Inst.TurnDuration * 1000f);
             timerSlider.value = GameData.Inst.TurnDuration * 1000.0f;
+            OnSetWorstMines(0);
+            OnSetBestMines(int.MaxValue);
         }
 
         private void Start()
@@ -50,6 +60,11 @@ namespace TanksProject.Game.UI
             stopBtn.onClick.AddListener(OnStopButtonClick);
             saveBtn.onClick.AddListener(OnSaveData);
         }
+
+        private void Update()
+        {
+            minesTotalTxt.text = GameData.Inst.MinesCount.ToString();
+        }
         #endregion
 
         #region PUBLIC_METHODS
@@ -59,9 +74,39 @@ namespace TanksProject.Game.UI
             this.onStopSimulation = onStopSimulation;
             this.onSaveData = onSaveData;
         }
+
+        public void SetMinesAmountLeft(int mines)
+        {
+            if (mines < bestMines)
+            {
+                OnSetBestMines(mines);
+            }
+
+            minesLeftTxt.text = mines.ToString();
+        }
+
+        public void SetMinesAmountLeftAfterEpoch(int mines)
+        {
+            if (mines > worstMines)
+            {
+                OnSetWorstMines(mines);
+            }
+        }
         #endregion
 
         #region PRIVATE_FIELDS
+        private void OnSetBestMines(int mines)
+        {
+            bestMines = mines;
+            minesBestTxt.text = mines.ToString();
+        }
+
+        private void OnSetWorstMines(int mines)
+        {
+            worstMines = mines;
+            minesWorstTxt.text = mines.ToString();
+        }
+
         private void OnTurnDurationChangeChange(float value)
         {
             GameData.Inst.TurnDuration = value / 1000f;

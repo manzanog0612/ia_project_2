@@ -107,12 +107,12 @@ namespace TanksProject.Game.UI
         {
             SimData sim = SaveLoadSystem.LoadSimFile();
 
-            ConfigurationData config = sim.config;
-
-            if (config == null)
-            { 
-                return; 
+            if (sim == null)
+            {
+                return;
             }
+
+            ConfigurationData config = sim.config;
 
             populationCountSlider.onValueChanged.Invoke(config.population_count);
             turnsPerGenerationSlider.onValueChanged.Invoke(config.turnsPerGeneration);

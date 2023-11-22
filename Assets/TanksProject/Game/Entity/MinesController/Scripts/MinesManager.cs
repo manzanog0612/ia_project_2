@@ -22,6 +22,10 @@ namespace TanksProject.Game.Entity.MinesController
         private Common.Grid.Grid grid = null;
         #endregion
 
+        #region PROPERTIES
+        public int ActiveMinesCount { get => activeMines.Count;  }
+        #endregion
+
         #region PUBLIC_METHODS
         public void Init(Common.Grid.Grid grid)
         {

@@ -129,6 +129,7 @@ namespace TanksProject.Game
 
             GameData.Inst.Reset();
             simulationOn = true;
+            maxAvg = 0;
         }
 
         private void StartDefaultSimulation()
@@ -199,6 +200,7 @@ namespace TanksProject.Game
 
             List<TEAM> deadTeams = new List<TEAM>();
 
+            simulationScreen.SetMinesAmountLeftAfterEpoch(minesManager.ActiveMinesCount);
             minesManager.CreateMines();
 
             for (int i = 0; i < teamsAmount; i++)
@@ -228,8 +230,8 @@ namespace TanksProject.Game
                 else
                 {
                     StopSimulation();
-                    StartSimulation();
-                    //StartDefaultSimulation();
+                    //StartSimulation();
+                    StartDefaultSimulation();
 
                     Debug.Log("Both teams dead");
                 }
@@ -261,8 +263,11 @@ namespace TanksProject.Game
 
             for (int i = 0; i < teamsAmount; i++)
             {
+                populationManagers[(TEAM)i].FiltrateDeadTanks();
                 populationManagers[(TEAM)i].TrackFitness();
             }
+
+            simulationScreen.SetMinesAmountLeft(minesManager.ActiveMinesCount);
         }
         #endregion
 
@@ -272,9 +277,9 @@ namespace TanksProject.Game
             for (int i = 0; i < populationManagers[TEAM.RED].Tanks.Count; i++)
             {
                 Tank redTank = populationManagers[TEAM.RED].Tanks[i];
-                Tank blueTank = populationManagers[TEAM.RED].Tanks[i].NearEnemyTank;
+                Tank blueTank = redTank.NearEnemyTank;
 
-                if (redTank.Tile != blueTank.Tile)
+                if (blueTank == null || redTank.Tile != blueTank.Tile)
                 {
                     continue;
                 }

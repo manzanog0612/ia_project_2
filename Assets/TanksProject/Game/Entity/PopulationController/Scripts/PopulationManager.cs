@@ -31,7 +31,7 @@ namespace TanksProject.Game.Entity.PopulationController
         private Grid grid = null;
         private Vector2Int[] tankStartTiles = null;
         private int timesDead = 0;
-        private static int ids = 0;
+        private int ids = 0;
         #endregion
 
         #region ACTIONS
@@ -81,10 +81,12 @@ namespace TanksProject.Game.Entity.PopulationController
             TeamData team = sim.teamsData[(int)this.team];
             Generation = team.generation_count;
 
-            Genome[] genomes = new Genome[GameData.Inst.PopulationCount];
+            int amountGenomes = team.genomes.Length > GameData.Inst.PopulationCount ? team.genomes.Length : GameData.Inst.PopulationCount;
+
+            Genome[] genomes = new Genome[amountGenomes];
 
             int savedGenomesIndex = 0;
-            for (int i = 0; i < GameData.Inst.PopulationCount; i++)
+            for (int i = 0; i < amountGenomes; i++)
             {
                 if (savedGenomesIndex == team.genomes.Length)
                 {
@@ -98,6 +100,7 @@ namespace TanksProject.Game.Entity.PopulationController
                 savedGenomesIndex++;
             }
 
+            Dead = false;
             CreatePopulationFromGenomes(genomes);
         }
 
@@ -164,12 +167,17 @@ namespace TanksProject.Game.Entity.PopulationController
                 Tank tank1 = activeTanks[i];
                 Tank tank2 = activeTanks[i].NearTeamTank;
 
+                if (tank2 == null) //every other teammate died in encounters with enemies, only one warrior left
+                {
+                    continue;
+                }
+
                 if (tank1.Tile != tank2.Tile || (tank1.NearMine != tank2.NearMine) || tank1.NearMine == null)
                 {
                     continue;
                 }
 
-                if (tank1.NearMine.Tile != tank1.Tile)
+                if (tank1.NearMine.Tile != tank1.Tile || !tank1.NearMine.gameObject.activeInHierarchy)
                 {
                     continue;
                 }
@@ -186,9 +194,30 @@ namespace TanksProject.Game.Entity.PopulationController
                 }
                 else if (tank1Eats ^ tank2Eats)
                 {
-                    Tank tankWhomEats = tank1Eats ? tank1 : tank2;
+                    if (tank1.MinesEaten == 0 && tank2.MinesEaten == 0)
+                    {
+                        tank1.GoodCalls++;
+                        tank2.GoodCalls++;
+                    }
 
+                    Tank tankWhomEats = tank1Eats ? tank1 : tank2;
                     tankWhomEats.TakeMine();
+                }
+            }
+        }
+
+        public void FiltrateDeadTanks()
+        {
+            if (GameData.Inst.Learning)
+            {
+                return;
+            }
+
+            for (int i = activeTanks.Count - 1; i >= 0; i--)
+            {
+                if (activeTanks[i].IsDead())
+                {
+                    DestroyTank(activeTanks[i]);
                 }
             }
         }
@@ -236,17 +265,32 @@ namespace TanksProject.Game.Entity.PopulationController
             if (!GameData.Inst.Learning)
             {
                 //Reset elites
+                int tilesIndex = 0;
                 for (int i = 0; i < activeTanks.Count; i++)
                 {
-                    ResetTank(activeTanks[i], tankStartTiles[i]);
+                    if (tilesIndex >= tankStartTiles.Length)
+                    {
+                        tilesIndex = 0;
+                    }
+                    ResetTank(activeTanks[i], tankStartTiles[tilesIndex]);
+                    tilesIndex++;
                 }
 
-                // Set the new genomes as each NeuralNetwork weights
-                for (int i = 0; i < newGenomes.Length; i++)
+                if (newGenomes != null)
                 {
-                    NeuralNetwork brain = CreateBrain();
-                    brain.SetWeights(newGenomes[i].genome);
-                    CreateTank(newGenomes[i], brain, tankStartTiles[i]);
+                    // Set the new genomes as each NeuralNetwork weights
+                    for (int i = 0; i < newGenomes.Length; i++)
+                    {
+                        NeuralNetwork brain = CreateBrain();
+                        brain.SetWeights(newGenomes[i].genome);
+
+                        if (tilesIndex >= tankStartTiles.Length)
+                        {
+                            tilesIndex = 0;
+                        }
+                        CreateTank(newGenomes[i], brain, tankStartTiles[tilesIndex]);
+                        tilesIndex++;
+                    }
                 }
             }
             else
@@ -279,23 +323,24 @@ namespace TanksProject.Game.Entity.PopulationController
             }
         }
 
-        public Tank GetNearestTank(GameObject actualTank)
+        public Tank GetNearestTank(GameObject tank)
         {
             Tank nearestTank = null;
             float closerDistance = float.MaxValue;
             for (int j = 0; j < activeTanks.Count; j++)
             {
-                if (activeTanks[j].gameObject == actualTank || activeTanks[j].IsDead())
+                Tank actualTank = activeTanks[j];
+                if (actualTank.gameObject == tank || actualTank.IsDead())
                 {
                     continue;
                 }
 
-                float distance = Vector3.Distance(activeTanks[j].transform.position, actualTank.transform.position);
+                float distance = Vector3.Distance(actualTank.transform.position, tank.transform.position);
 
                 if (distance < closerDistance)
                 {
                     closerDistance = distance;
-                    nearestTank = activeTanks[j];
+                    nearestTank = actualTank;
                 }
             }
 
@@ -353,13 +398,13 @@ namespace TanksProject.Game.Entity.PopulationController
                 Tank tank = activeTanks[i];
                 if (tank.State == STATE.REPRODUCE || tank.State == STATE.SURVIVE)
                 {
-                    if (tank.TurnsAlive == 3)
+                    if (tank.GenerationsAlive == 2)
                     {
                         tank.SetState(STATE.DIE);
                     }
                     else
                     {
-                        tank.TurnsAlive++;
+                        tank.GenerationsAlive++;
                     }
                 }
             }
@@ -387,7 +432,7 @@ namespace TanksProject.Game.Entity.PopulationController
                         reproducible.Add(tank.Genome);
                     }
 
-                    if (tank.TurnsAlive < 3)
+                    if (tank.GenerationsAlive < 3)
                     {
                         elites++;
                     }
@@ -401,6 +446,7 @@ namespace TanksProject.Game.Entity.PopulationController
         {
             DestroyTanks();
 
+            int tilesIndex = 0;
             for (int i = 0; i < genomes.Length; i++)
             {
                 NeuralNetwork brain = CreateBrain();
@@ -408,7 +454,13 @@ namespace TanksProject.Game.Entity.PopulationController
                 Genome genome = new Genome(genomes[i].genome);
                 genome.fitness = genomes[i].fitness;
 
-                OnCreateTank(brain, genome, tankStartTiles[i]);
+                if (tilesIndex >= tankStartTiles.Length)
+                {
+                    tilesIndex = 0;
+                }
+
+                OnCreateTank(brain, genome, tankStartTiles[tilesIndex]);
+                tilesIndex++;
             }
         }
 
@@ -529,7 +581,7 @@ namespace TanksProject.Game.Entity.PopulationController
         {
             for (int i = activeTanks.Count - 1; i >= 0 ; i--)
             {
-                tanksPool.Release(activeTanks[i]);
+                DestroyTank(activeTanks[i]);
             }
         }
 

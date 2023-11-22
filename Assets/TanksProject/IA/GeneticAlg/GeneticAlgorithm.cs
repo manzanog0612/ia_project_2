@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
+using TanksProject.Game.Data;
 
 public class Genome
 {
@@ -39,6 +40,8 @@ public class GeneticAlgorithm
 	float mutationChance = 0.0f;
 	float mutationRate = 0.0f;
 
+	const int elites = 2;
+
 	public GeneticAlgorithm(float mutationChance, float mutationRate)
 	{
 		this.mutationChance = mutationChance;
@@ -58,31 +61,30 @@ public class GeneticAlgorithm
     }
 
 
-	public Genome[] Epoch(Genome[] reproducible, Genome[] elites)
-	{
-		totalFitness = 0;
-
-		population.Clear();
-		newPopulation.Clear();
-
-		population.AddRange(reproducible);
-		population.Sort(HandleComparison);
-        
-
-        foreach (Genome g in population)
-		{
-			totalFitness += g.fitness;
-		}
-
-        newPopulation.AddRange(elites);
-
-		for (int i = 0; i < population.Count; i += 2)
-		{
-            Crossover(i < population.Count - 1 || reproducible.Length % 2 == 0);
-        }
-
-		return newPopulation.ToArray();
-	}
+	//public Genome[] Epoch(Genome[] reproducible, Genome[] elites)
+	//{
+	//	totalFitness = 0;
+	//
+	//	population.Clear();
+	//	newPopulation.Clear();
+	//
+	//	population.AddRange(reproducible);
+	//	population.Sort(HandleComparison);
+    //    
+    //    foreach (Genome g in population)
+	//	{
+	//		totalFitness += g.fitness;
+	//	}
+	//
+    //    newPopulation.AddRange(elites);
+	//
+	//	while (newPopulation.Count < population.Count)
+	//	{
+    //        Crossover(population.Count - newPopulation.Count >= 2);
+    //    }
+	//
+	//	return newPopulation.ToArray();
+	//}
 
     public Genome[] Epoch(Genome[] oldGenomes)
     {
@@ -99,14 +101,17 @@ public class GeneticAlgorithm
             totalFitness += (g.fitness > 0 ? g.fitness : 0);
         }
 
-        for (int i = population.Count - 1; i > population.Count - 5 &&  i > 0 ; i--)
+		if (GameData.Inst.Learning)
 		{
-			newPopulation.Add(population[i]);
-		}
+            for (int i = population.Count - 1; i > population.Count - elites - 1 && i > 0; i--)
+            {
+                newPopulation.Add(population[i]);
+            }
+        }
 
         while (newPopulation.Count < population.Count)
         {
-            Crossover(true);
+            Crossover(population.Count - newPopulation.Count >= 2);
         }
 
         return newPopulation.ToArray();
