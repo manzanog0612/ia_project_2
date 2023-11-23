@@ -230,7 +230,6 @@ namespace TanksProject.Game
                 else
                 {
                     StopSimulation();
-                    //StartSimulation();
                     StartDefaultSimulation();
 
                     Debug.Log("Both teams dead");
@@ -238,8 +237,6 @@ namespace TanksProject.Game
 
                 return;
             }
-
-            //Debug.Log("neither teams dead");
         }
 
         private void ChangeTurn()
