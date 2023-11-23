@@ -60,32 +60,6 @@ public class GeneticAlgorithm
         return genomes;
     }
 
-
-	//public Genome[] Epoch(Genome[] reproducible, Genome[] elites)
-	//{
-	//	totalFitness = 0;
-	//
-	//	population.Clear();
-	//	newPopulation.Clear();
-	//
-	//	population.AddRange(reproducible);
-	//	population.Sort(HandleComparison);
-    //    
-    //    foreach (Genome g in population)
-	//	{
-	//		totalFitness += g.fitness;
-	//	}
-	//
-    //    newPopulation.AddRange(elites);
-	//
-	//	while (newPopulation.Count < population.Count)
-	//	{
-    //        Crossover(population.Count - newPopulation.Count >= 2);
-    //    }
-	//
-	//	return newPopulation.ToArray();
-	//}
-
     public Genome[] Epoch(Genome[] oldGenomes)
     {
         totalFitness = 0;
@@ -204,7 +178,6 @@ public class GeneticAlgorithm
 	{
 		return x.fitness > y.fitness ? 1 : x.fitness < y.fitness ? -1 : 0;
 	}
-
 
 	public Genome RouletteSelection()
 	{
